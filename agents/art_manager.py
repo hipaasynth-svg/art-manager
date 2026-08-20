@@ -5,280 +5,310 @@ Owns codycarlson.art, finds high-intent North Dakota buyers per piece,
 and drives sales. Uses Claude Opus 4.8 for creative / sales work.
 
 Install:
-  pip install nooa pydantic
+  pip install -r requirements.txt
 
 Run (example):
   export ANTHROPIC_API_KEY=...
   python -m agents.run_daily
+
+Note: importing this module has no side effects. The nooa Agent subclass is
+built lazily the first time ``ArtManagerAgent`` is accessed (PEP 562
+``__getattr__``), and the LLM client is constructed at that same point — so the
+data models and pure logic can be imported and tested without nooa, an API key,
+or network access.
 """
 
 from __future__ import annotations
 
-from typing import Literal
-from pydantic import BaseModel, Field
+from functools import lru_cache
+
+from pydantic import Field
 
 from nooa import Agent
-from nooa.unifiedllm.registry import get_llm_client
+
+from . import logic
+from .config import Config, load_config
+from .models import (
+    AgentState,
+    ArtPiece,
+    ContentItem,
+    ResearchInsight,
+    SalesPipeline,
+    SiteChange,
+)
+from .state import load_state, save_state
+
+_CONFIG: Config = load_config()
+
 
 # ---------- LLM ----------
-# Requires ANTHROPIC_API_KEY in the environment
-# Claude Opus 4.8 — complex agentic / sales / creative work
-llm = get_llm_client("claude-opus-4-8")
+@lru_cache(maxsize=1)
+def get_llm():
+    """Lazily build and cache the LLM client.
 
+    Deferred so merely importing the package has no side effects and needs no
+    ANTHROPIC_API_KEY; the client is constructed the first time the agent
+    class is built (see ``_build_agent_class``).
+    """
+    from nooa.unifiedllm.registry import get_llm_client
 
-# ---------- Data models ----------
-class ArtPiece(BaseModel):
-    id: str
-    title: str
-    medium: str
-    status: Literal["concept", "in_progress", "finished", "listed", "sold"]
-    size: str = ""
-    price: float | None = None
-    notes: str = ""
-    outdoor_ready: bool = False
-
-
-class ContentItem(BaseModel):
-    id: str
-    type: Literal["post", "reel", "story", "email", "listing"]
-    platform: str
-    status: Literal["idea", "drafted", "scheduled", "posted"]
-    related_piece_id: str | None = None
-    scheduled_for: str | None = None
-
-
-class SalesPipeline(BaseModel):
-    leads: list[str] = Field(default_factory=list)
-    active_conversations: list[str] = Field(default_factory=list)
-    closed_this_month: int = 0
-    revenue_this_month: float = 0.0
-
-
-class SiteChange(BaseModel):
-    title: str
-    rationale: str
-    files: list[str]
-    priority: Literal["high", "medium", "low"]
-    risk: Literal["low", "medium", "high"]
-
-
-class ResearchInsight(BaseModel):
-    source: str
-    observation: str
-    recommendation: str
-    confidence: Literal["high", "medium", "low"]
+    return get_llm_client(_CONFIG.model)
 
 
 # ---------- Agent ----------
-class ArtManagerAgent(Agent, llm=llm):
-    """
-    You are a professional art manager whose only job is to turn Cody into
-    a consistently paid artist.
+# The nooa metaclass consumes ``llm`` when the class is defined, so we build the
+# class lazily inside a cached factory and expose it via module ``__getattr__``
+# (PEP 562). Result: ``import agents`` / ``import agents.art_manager`` has no
+# side effects — the LLM client is only constructed the first time
+# ``ArtManagerAgent`` is actually accessed.
+@lru_cache(maxsize=1)
+def _build_agent_class() -> type:
+    class ArtManagerAgent(Agent, llm=get_llm()):
+        """
+        You are a professional art manager whose only job is to turn Cody into
+        a consistently paid artist.
 
-    You fully own codycarlson.art (Vercel + GitHub hipaasynth-svg/codycarlson.art).
-    You research successful artist sites, diagnose the current site, propose
-    concrete improvements, and implement them only via branch + pull request
-    (never push directly to main).
+        You fully own codycarlson.art (Vercel + GitHub hipaasynth-svg/codycarlson.art).
+        You research successful artist sites, diagnose the current site, propose
+        concrete improvements, and implement them only via branch + pull request
+        (never push directly to main).
 
-    You actively hunt high-intent buyers in North Dakota on a per-piece basis.
-    Match each finished work to real local targets (lodges, restaurants,
-    designers, builders, collectors) and produce specific next actions.
+        You actively hunt high-intent buyers in North Dakota on a per-piece basis.
+        Match each finished work to real local targets (lodges, restaurants,
+        designers, builders, collectors) and produce specific next actions.
 
-    Always persist briefs, buyer lists, state, and printouts to Google Drive.
-    Printouts run every 3 days (or immediately if something is pressing).
+        Always persist briefs, buyer lists, state, and printouts to Google Drive.
+        Printouts run every 3 days (or immediately if something is pressing).
 
-    Be direct, practical, and protective of Cody's limited energy and time.
-    Prefer one high-leverage action over many weak ones.
-    """
+        Be direct, practical, and protective of Cody's limited energy and time.
+        Prefer one high-leverage action over many weak ones.
+        """
 
-    # === State ===
-    pieces: list[ArtPiece] = Field(default_factory=list)
-    content_queue: list[ContentItem] = Field(default_factory=list)
-    pipeline: SalesPipeline = Field(default_factory=SalesPipeline)
-    monthly_revenue_goal: float = 2000.0
-    focus_this_week: str = "finish and list highest-leverage pieces"
+        # === State ===
+        pieces: list[ArtPiece] = Field(default_factory=list)
+        content_queue: list[ContentItem] = Field(default_factory=list)
+        pipeline: SalesPipeline = Field(default_factory=SalesPipeline)
+        monthly_revenue_goal: float = _CONFIG.monthly_revenue_goal
+        focus_this_week: str = "finish and list highest-leverage pieces"
 
-    # Site ownership
-    github_owner: str = "hipaasynth-svg"
-    github_repo: str = "codycarlson.art"
-    default_branch: str = "main"
-    last_research: list[ResearchInsight] = Field(default_factory=list)
-    pending_changes: list[SiteChange] = Field(default_factory=list)
+        # Site ownership
+        github_owner: str = _CONFIG.github_owner
+        github_repo: str = _CONFIG.github_repo
+        default_branch: str = _CONFIG.default_branch
+        last_research: list[ResearchInsight] = Field(default_factory=list)
+        pending_changes: list[SiteChange] = Field(default_factory=list)
 
-    # Google Drive (live folders)
-    drive_root_folder_id: str = "1uzI3VXasnvl-4_KemHN60dgwBP1_q4vr"
-    drive_printouts_id: str = "1WUh8YNYO7736eUwhU0EctoM9wZWOHARM"
-    drive_briefs_id: str = "1s3nujmMevAOGWvfCk-dwZf5l0SVuS2HB"
-    drive_buyers_id: str = "103wQVeWOo-gVdeglZD_w7jwNbGsdnXJZ"
-    drive_state_id: str = "1shpW9nOsr6EOHNblz23NUiZWIUucrlV4"
+        # Google Drive (live folders)
+        drive_root_folder_id: str = _CONFIG.drive_root_folder_id
+        drive_printouts_id: str = _CONFIG.drive_printouts_id
+        drive_briefs_id: str = _CONFIG.drive_briefs_id
+        drive_buyers_id: str = _CONFIG.drive_buyers_id
+        drive_state_id: str = _CONFIG.drive_state_id
 
-    # === Deterministic helpers ===
-    def get_finished_unlisted(self) -> list[ArtPiece]:
-        return [p for p in self.pieces if p.status == "finished"]
+        # Local state persistence
+        state_path: str = _CONFIG.state_path
 
-    def get_in_progress(self) -> list[ArtPiece]:
-        return [p for p in self.pieces if p.status == "in_progress"]
+        # === Deterministic helpers (delegate to pure logic) ===
+        def get_finished_unlisted(self) -> list[ArtPiece]:
+            return logic.finished_unlisted(self.pieces)
 
-    def revenue_gap(self) -> float:
-        return max(0.0, self.monthly_revenue_goal - self.pipeline.revenue_this_month)
+        def get_in_progress(self) -> list[ArtPiece]:
+            return logic.in_progress(self.pieces)
 
-    def add_piece(self, piece: ArtPiece) -> None:
-        self.pieces = [p for p in self.pieces if p.id != piece.id] + [piece]
-
-    def get_piece(self, piece_id: str) -> ArtPiece | None:
-        for p in self.pieces:
-            if p.id == piece_id:
-                return p
-        return None
-
-    def update_piece_status(self, piece_id: str, status: str) -> None:
-        for p in self.pieces:
-            if p.id == piece_id:
-                p.status = status  # type: ignore
-                break
-
-    def seed_known_pieces(self) -> None:
-        """Load the two finished pieces we already have."""
-        self.add_piece(
-            ArtPiece(
-                id="summer-walleye",
-                title="Summer Walleye",
-                medium="Box elder wood carving",
-                status="finished",
-                size="27 inch",
-                outdoor_ready=True,
-                notes="Full outdoor UV and water protective coats (3), wet sanded. Strong ND fishing culture piece.",
+        def revenue_gap(self) -> float:
+            return logic.revenue_gap(
+                self.monthly_revenue_goal, self.pipeline.revenue_this_month
             )
-        )
-        self.add_piece(
-            ArtPiece(
-                id="buffalo",
-                title="Buffalo",
-                medium="Acrylic on canvas",
-                status="finished",
-                size="36x24",
-                outdoor_ready=False,
-                notes="Inspired by gaming machines / Great American Buffalo. Bold graphic portrait with yellow border.",
+
+        def add_piece(self, piece: ArtPiece) -> None:
+            self.pieces = logic.upsert_piece(self.pieces, piece)
+
+        def get_piece(self, piece_id: str) -> ArtPiece | None:
+            return logic.get_piece(self.pieces, piece_id)
+
+        def update_piece_status(self, piece_id: str, status: str) -> bool:
+            """Update a piece's status. Raises ValueError on an unknown status."""
+            return logic.set_status(self.pieces, piece_id, status)
+
+        # === State persistence ===
+        def to_state(self) -> AgentState:
+            return AgentState(
+                pieces=self.pieces,
+                content_queue=self.content_queue,
+                pipeline=self.pipeline,
+                monthly_revenue_goal=self.monthly_revenue_goal,
+                focus_this_week=self.focus_this_week,
+                last_research=self.last_research,
+                pending_changes=self.pending_changes,
             )
-        )
 
-    # === Core business methods (LLM-completed) ===
-    async def daily_command_board(self) -> str:
-        """
-        Produce a short, ruthless daily command board for the art business.
-        Max 8 lines. Include:
-        - One highest-leverage action for today
-        - What to deliberately ignore
-        - Current revenue gap
-        - Next piece that should be finished or listed
-        - Any high-priority site improvement that should ship this week
-        - One ND buyer action tied to a specific piece
-        """
-        ...
+        def apply_state(self, state: AgentState) -> None:
+            self.pieces = state.pieces
+            self.content_queue = state.content_queue
+            self.pipeline = state.pipeline
+            self.monthly_revenue_goal = state.monthly_revenue_goal
+            self.focus_this_week = state.focus_this_week
+            self.last_research = state.last_research
+            self.pending_changes = state.pending_changes
 
-    async def plan_content_for_piece(self, piece_id: str) -> list[ContentItem]:
-        """
-        Create a tight content plan (3–5 items) that will help sell the given piece.
-        Prefer high-signal formats (process video, finished reveal, story behind the work).
-        """
-        ...
+        def save(self, path: str | None = None) -> None:
+            save_state(self.to_state(), path or self.state_path)
 
-    async def pricing_recommendation(self, piece_id: str) -> float:
-        """
-        Recommend a realistic selling price based on medium, complexity, market,
-        and the goal of becoming a paid artist. Be honest, not optimistic.
-        Return only the number.
-        """
-        ...
+        def load(self, path: str | None = None) -> None:
+            self.apply_state(load_state(path or self.state_path))
 
-    async def weekly_review(self) -> str:
-        """
-        Short weekly review: what moved the needle, what stalled,
-        adjusted focus, one clear ask for Cody, and any open site PRs.
-        """
-        ...
+        def seed_known_pieces(self) -> None:
+            """Load the two finished pieces we already have."""
+            self.add_piece(
+                ArtPiece(
+                    id="summer-walleye",
+                    title="Summer Walleye",
+                    medium="Box elder wood carving",
+                    status="finished",
+                    size="27 inch",
+                    outdoor_ready=True,
+                    notes="Full outdoor UV and water protective coats (3), wet sanded. Strong ND fishing culture piece.",
+                )
+            )
+            self.add_piece(
+                ArtPiece(
+                    id="buffalo",
+                    title="Buffalo",
+                    medium="Acrylic on canvas",
+                    status="finished",
+                    size="36x24",
+                    outdoor_ready=False,
+                    notes="Inspired by gaming machines / Great American Buffalo. Bold graphic portrait with yellow border.",
+                )
+            )
 
-    async def create_sales_brief(self, piece_id: str) -> str:
-        """
-        Write a clean sales brief for a finished piece usable for listings,
-        DMs, or outreach. Keep it human and specific to the actual piece.
-        """
-        ...
+        # === Core business methods (LLM-completed) ===
+        async def daily_command_board(self) -> str:
+            """
+            Produce a short, ruthless daily command board for the art business.
+            Max 8 lines. Include:
+            - One highest-leverage action for today
+            - What to deliberately ignore
+            - Current revenue gap
+            - Next piece that should be finished or listed
+            - Any high-priority site improvement that should ship this week
+            - One ND buyer action tied to a specific piece
+            """
+            ...
 
-    # === Per-piece ND buyer hunting ===
-    async def find_buyers_for_piece(self, piece_id: str) -> str:
-        """
-        For one specific piece, find the highest-intent North Dakota buyers.
-        Match the piece's medium, scale, style, story, and price to real local
-        targets (homes, new builds, designers, businesses, venues, collectors,
-        fishing lodges, restaurants).
+        async def plan_content_for_piece(self, piece_id: str) -> list[ContentItem]:
+            """
+            Create a tight content plan (3–5 items) that will help sell the given piece.
+            Prefer high-signal formats (process video, finished reveal, story behind the work).
+            """
+            ...
 
-        Return a ranked shortlist (3–5) with:
-        - Who they are
-        - Why this piece fits them
-        - One clear next outreach action
+        async def pricing_recommendation(self, piece_id: str) -> float:
+            """
+            Recommend a realistic selling price based on medium, complexity, market,
+            and the goal of becoming a paid artist. Be honest, not optimistic.
+            Return only the number.
+            """
+            ...
 
-        Be specific and local to Minot / North Dakota. No generic advice.
-        """
-        ...
+        async def weekly_review(self) -> str:
+            """
+            Short weekly review: what moved the needle, what stalled,
+            adjusted focus, one clear ask for Cody, and any open site PRs.
+            """
+            ...
 
-    async def create_nd_outreach_brief(self, piece_id: str, target: str) -> str:
-        """
-        Write a short, specific outreach message (email or DM) for one ND target
-        about one specific piece. Personal, not spammy. Reference real local
-        context when possible. Keep it under 120 words.
-        """
-        ...
+        async def create_sales_brief(self, piece_id: str) -> str:
+            """
+            Write a clean sales brief for a finished piece usable for listings,
+            DMs, or outreach. Keep it human and specific to the actual piece.
+            """
+            ...
 
-    # === Site research & analysis ===
-    async def research_successful_art_sites(self) -> list[ResearchInsight]:
-        """
-        Research high-converting artist / sculptor / carver / commission sites.
-        Focus on: layout, pricing presentation, trust signals, CTAs, photo treatment,
-        mobile experience, and what actually drives commission inquiries.
-        Return 5–8 concrete insights with sources and recommendations.
-        Store them on self.last_research.
-        """
-        ...
+        # === Per-piece ND buyer hunting ===
+        async def find_buyers_for_piece(self, piece_id: str) -> str:
+            """
+            For one specific piece, find the highest-intent North Dakota buyers.
+            Match the piece's medium, scale, style, story, and price to real local
+            targets (homes, new builds, designers, businesses, venues, collectors,
+            fishing lodges, restaurants).
 
-    async def analyze_current_site(self) -> str:
-        """
-        Diagnose codycarlson.art (especially js/config.js, index.html, css/styles.css)
-        against the latest research insights.
-        Produce a clear diagnosis: what is working, what is weak, and the top 3–5
-        highest-leverage improvements.
-        """
-        ...
+            Return a ranked shortlist (3–5) with:
+            - Who they are
+            - Why this piece fits them
+            - One clear next outreach action
 
-    async def propose_improvements(self) -> list[SiteChange]:
-        """
-        From research + analysis, produce a prioritized list of concrete site changes.
-        Each change must name the exact files that will be touched and the rationale.
-        Store them on self.pending_changes.
-        """
-        ...
+            Be specific and local to Minot / North Dakota. No generic advice.
+            """
+            ...
 
-    # === Implementation (always via PR — human reviews) ===
-    async def implement_change_as_pr(
-        self,
-        change: SiteChange,
-        branch_name: str | None = None,
-    ) -> str:
-        """
-        Describe exactly how to implement one SiteChange as a GitHub PR:
-        1. Branch name to create from main
-        2. Exact file edits (or new content)
-        3. Commit message
-        4. PR title and body
+        async def create_nd_outreach_brief(self, piece_id: str, target: str) -> str:
+            """
+            Write a short, specific outreach message (email or DM) for one ND target
+            about one specific piece. Personal, not spammy. Reference real local
+            context when possible. Keep it under 120 words.
+            """
+            ...
 
-        Never claim to have pushed. Always produce instructions or diffs that
-        can be applied safely. The human creates the PR.
-        """
-        ...
+        # === Site research & analysis ===
+        async def research_successful_art_sites(self) -> list[ResearchInsight]:
+            """
+            Research high-converting artist / sculptor / carver / commission sites.
+            Focus on: layout, pricing presentation, trust signals, CTAs, photo treatment,
+            mobile experience, and what actually drives commission inquiries.
+            Return 5–8 concrete insights with sources and recommendations.
+            Store them on self.last_research.
+            """
+            ...
 
-    async def ship_top_improvements(self, max_prs: int = 2) -> str:
-        """
-        Take the highest-priority pending changes and produce ready-to-apply
-        PR instructions for each (limit max_prs). Return a clear summary.
-        """
-        ...
+        async def analyze_current_site(self) -> str:
+            """
+            Diagnose codycarlson.art (especially js/config.js, index.html, css/styles.css)
+            against the latest research insights.
+            Produce a clear diagnosis: what is working, what is weak, and the top 3–5
+            highest-leverage improvements.
+            """
+            ...
+
+        async def propose_improvements(self) -> list[SiteChange]:
+            """
+            From research + analysis, produce a prioritized list of concrete site changes.
+            Each change must name the exact files that will be touched and the rationale.
+            Store them on self.pending_changes.
+            """
+            ...
+
+        # === Implementation (always via PR — human reviews) ===
+        async def implement_change_as_pr(
+            self,
+            change: SiteChange,
+            branch_name: str | None = None,
+        ) -> str:
+            """
+            Describe exactly how to implement one SiteChange as a GitHub PR:
+            1. Branch name to create from main
+            2. Exact file edits (or new content)
+            3. Commit message
+            4. PR title and body
+
+            Never claim to have pushed. Always produce instructions or diffs that
+            can be applied safely. The human creates the PR.
+            """
+            ...
+
+        async def ship_top_improvements(self, max_prs: int = 2) -> str:
+            """
+            Take the highest-priority pending changes and produce ready-to-apply
+            PR instructions for each (limit max_prs). Return a clear summary.
+            """
+            ...
+
+    return ArtManagerAgent
+
+
+def __getattr__(name: str):
+    # PEP 562: resolve ``ArtManagerAgent`` on first access, building the nooa
+    # class (and LLM client) only then.
+    if name == "ArtManagerAgent":
+        return _build_agent_class()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

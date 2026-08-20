@@ -21,5 +21,8 @@ env/
 .mypy_cache/
 .ruff_cache/
 
+# Runtime state
+art_manager_state.json
+
 # OS
 .DS_Store

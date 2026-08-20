@@ -1,2 +1,10 @@
-nooa>=0.0.8
-pydantic>=2.0
+# Runtime dependencies.
+#
+# nooa (NVIDIA Object-Oriented Agents) is the agent runtime. It is not on the
+# public PyPI index; install it from wherever your team publishes it (private
+# index or VCS URL), e.g.:
+#   pip install --index-url <private-index> "nooa>=0.0.8,<0.1"
+# The pin below is intentional — nooa is pre-1.0, so minor bumps can break APIs.
+nooa>=0.0.8,<0.1
+
+pydantic>=2.0,<3.0

@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "art-manager"
+version = "0.1.0"
+description = "NOOA agent that manages the art business for codycarlson.art"
+readme = "README.md"
+requires-python = ">=3.11"
+# Note: nooa is a runtime dependency but is not on public PyPI (see
+# requirements.txt). It is intentionally omitted here so `pip install .` does
+# not fail; install nooa separately from your private source.
+dependencies = [
+    "pydantic>=2.0,<3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0,<9.0",
+]
+
+[tool.setuptools]
+packages = ["agents"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
