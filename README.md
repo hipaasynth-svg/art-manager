@@ -9,26 +9,27 @@ NOOA (NVIDIA Object-Oriented Agents) specialist that owns **codycarlson.art**.
 - Sales briefs + pricing recommendations
 - Content plans
 - Site research + improvement proposals (implemented only via PR)
-- **Always uses Google Drive** for storage and printouts
+- **Always** persists to Google Drive
+- Printouts every ≤ 3 days (Automation active)
 
-## Google Drive
+## Live Google Drive
 
-Folder: **Art Manager**
-- `Printouts/` — every ≤3 days (or sooner if pressing)
-- `Sales Briefs/`
-- `Buyer Lists/`
-- `State/`
+[Art Manager folder](https://drive.google.com/drive/folders/1uzI3VXasnvl-4_KemHN60dgwBP1_q4vr)
 
-First printout already live: [Printout 2026-08-20](https://docs.google.com/document/d/19of4TwIqB1YWwzBlUcjb3vyDrbCnyXocyExEi3ktWgg/edit)
-
-Automation "Art Manager 3-Day Printout" is active.
+| Folder | ID |
+|--------|----|
+| Root | `1uzI3VXasnvl-4_KemHN60dgwBP1_q4vr` |
+| Printouts | `1WUh8YNYO7736eUwhU0EctoM9wZWOHARM` |
+| Sales Briefs | `1s3nujmMevAOGWvfCk-dwZf5l0SVuS2HB` |
+| Buyer Lists | `103wQVeWOo-gVdeglZD_w7jwNbGsdnXJZ` |
+| State | `1shpW9nOsr6EOHNblz23NUiZWIUucrlV4` |
 
 ## Current finished pieces
 
-| ID              | Title           | Medium                    | Size   | Notes                          |
-|-----------------|-----------------|---------------------------|--------|--------------------------------|
-| `summer-walleye`| Summer Walleye  | Box elder wood carving    | 27"    | Outdoor UV + water protected   |
-| `buffalo`       | Buffalo         | Acrylic on canvas         | 36×24  | Gaming-machine inspired        |
+| ID | Title | Medium | Size | Notes |
+|----|-------|--------|------|-------|
+| `summer-walleye` | Summer Walleye | Box elder wood carving | 27" | Outdoor UV + water protected |
+| `buffalo` | Buffalo | Acrylic on canvas | 36×24 | Gaming-machine inspired |
 
 ## Setup
 
@@ -48,16 +49,6 @@ python -m agents.run_daily
 All site changes are proposed as branch + pull request instructions.  
 Nothing is pushed directly to `main` on codycarlson.art.
 
-## Repo ownership
+## Automation
 
-- Site: `hipaasynth-svg/codycarlson.art`
-- Agent: this repo
-
-## Next specialists (planned)
-
-- AssetRecoveryAgent
-- HipAAsynthAgent
-- EatMinot / DrinkMinot agents
-- TessomancyAgent
-- GratefulSpacesAgent
-- Orchestrator that manages Cody across all six
+`Art Manager 3-Day Printout` is active and writes to the Printouts folder.

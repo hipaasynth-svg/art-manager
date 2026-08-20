@@ -83,6 +83,9 @@ class ArtManagerAgent(Agent, llm=llm):
     Match each finished work to real local targets (lodges, restaurants,
     designers, builders, collectors) and produce specific next actions.
 
+    Always persist briefs, buyer lists, state, and printouts to Google Drive.
+    Printouts run every 3 days (or immediately if something is pressing).
+
     Be direct, practical, and protective of Cody's limited energy and time.
     Prefer one high-leverage action over many weak ones.
     """
@@ -100,6 +103,13 @@ class ArtManagerAgent(Agent, llm=llm):
     default_branch: str = "main"
     last_research: list[ResearchInsight] = Field(default_factory=list)
     pending_changes: list[SiteChange] = Field(default_factory=list)
+
+    # Google Drive (live folders)
+    drive_root_folder_id: str = "1uzI3VXasnvl-4_KemHN60dgwBP1_q4vr"
+    drive_printouts_id: str = "1WUh8YNYO7736eUwhU0EctoM9wZWOHARM"
+    drive_briefs_id: str = "1s3nujmMevAOGWvfCk-dwZf5l0SVuS2HB"
+    drive_buyers_id: str = "103wQVeWOo-gVdeglZD_w7jwNbGsdnXJZ"
+    drive_state_id: str = "1shpW9nOsr6EOHNblz23NUiZWIUucrlV4"
 
     # === Deterministic helpers ===
     def get_finished_unlisted(self) -> list[ArtPiece]:
