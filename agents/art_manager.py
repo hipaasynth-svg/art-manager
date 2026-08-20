@@ -2,7 +2,7 @@
 Art Manager Agent — NOOA (NVIDIA Object-Oriented Agents)
 
 Owns codycarlson.art, finds high-intent North Dakota buyers per piece,
-and drives sales. Uses Claude Opus 5 for creative / sales work.
+and drives sales. Uses Claude Opus 4.8 for creative / sales work.
 
 Install:
   pip install nooa pydantic
@@ -22,7 +22,8 @@ from nooa.unifiedllm.registry import get_llm_client
 
 # ---------- LLM ----------
 # Requires ANTHROPIC_API_KEY in the environment
-llm = get_llm_client("claude-opus-5")
+# Claude Opus 4.8 — complex agentic / sales / creative work
+llm = get_llm_client("claude-opus-4-8")
 
 
 # ---------- Data models ----------
