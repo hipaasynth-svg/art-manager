@@ -25,6 +25,7 @@ class Config:
     github_owner: str = "hipaasynth-svg"
     github_repo: str = "codycarlson.art"
     default_branch: str = "main"
+    site_url: str = "https://codycarlson.art"
 
     # Google Drive folder IDs
     drive_root_folder_id: str = "1uzI3VXasnvl-4_KemHN60dgwBP1_q4vr"
@@ -52,6 +53,7 @@ def load_config() -> Config:
         github_owner=_env("ART_MANAGER_GITHUB_OWNER", d.github_owner),
         github_repo=_env("ART_MANAGER_GITHUB_REPO", d.github_repo),
         default_branch=_env("ART_MANAGER_DEFAULT_BRANCH", d.default_branch),
+        site_url=_env("ART_MANAGER_SITE_URL", d.site_url),
         drive_root_folder_id=_env("ART_MANAGER_DRIVE_ROOT_ID", d.drive_root_folder_id),
         drive_printouts_id=_env("ART_MANAGER_DRIVE_PRINTOUTS_ID", d.drive_printouts_id),
         drive_briefs_id=_env("ART_MANAGER_DRIVE_BRIEFS_ID", d.drive_briefs_id),

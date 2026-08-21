@@ -51,7 +51,23 @@ async def main() -> None:
 
     print("=== Seeded pieces ===")
     for p in agent.pieces:
-        print(f"  • {p.title} ({p.medium}) — {p.status} — {p.size}")
+        flag = "  [FOR SALE]" if p.for_sale else ""
+        print(f"  • {p.title} ({p.medium}) — {p.status} — {p.size}{flag}")
+
+    # Read the live site first so the analysis is grounded in what's really there.
+    print(f"\n=== Reading live site: {agent.site_url} ===")
+    snap = agent.fetch_site()
+    if snap.ok:
+        print(
+            f"  ok — title={snap.title!r}, {len(snap.images)} images, "
+            f"prices={snap.prices or 'none found'}, "
+            f"emails={snap.emails or 'none found'}, "
+            f"data scripts={list(snap.data_scripts) or 'none'}"
+        )
+        await _step("Site diagnosis (grounded in the live page)",
+                    lambda: agent.analyze_current_site(snap))
+    else:
+        print(f"  could not read site: {snap.error}")
 
     await _step("Daily command board", agent.daily_command_board)
     await _step(

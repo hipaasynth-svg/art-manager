@@ -10,7 +10,39 @@ The agent's LLM-completed capabilities:
 - Per-piece high-intent North Dakota buyer hunting
 - Sales briefs + pricing recommendations
 - Content plans
-- Site research + improvement proposals (implemented only via PR)
+- **Reads the live site** and diagnoses it as a selling tool (grounded in the
+  real page, not a guess — see `agents/site.py`)
+- Site improvement proposals (implemented only via PR)
+
+## Hook it up (turning the portfolio into sales)
+
+The site is a portfolio today. Four plug-in points turn it into something that
+sells — each is independent, wire them in any order:
+
+1. **Read the live site — already wired.** `agent.fetch_site()` fetches
+   `ART_MANAGER_SITE_URL` (default `https://codycarlson.art`), extracts pieces,
+   images, prices, contact info, and any `js/config.js` data, and remembers it.
+   Nothing to configure; it just works on a machine with internet access.
+
+2. **Mark what's for sale.** A piece becomes sellable when it has
+   `for_sale=True`, a `price`, and a `buy_url`. Set these on the `ArtPiece`
+   (and, on the website, add the same to `js/config.js` + a "Buy" button).
+   `agent.get_sellable()` returns the pieces a buyer can pay for right now.
+
+3. **Take payment → `buy_url`.** Easiest path with no backend: create a
+   **Stripe Payment Link** (or Gumroad/Square link) per piece and paste it into
+   that piece's `buy_url`. The agent then includes the pay link in briefs and
+   outreach. (No global key needed — the link *is* the integration.)
+
+4. **Find real buyers → `ART_MANAGER_SEARCH_API_KEY`.** Buyer hunting is only as
+   real as its data source. Add a search API key (Google Places is best for
+   local businesses — lodges, restaurants, designers, builders; Brave Search or
+   SerpAPI also work) to turn AI-guessed buyer *types* into named, verifiable ND
+   leads with links.
+
+5. **Send the outreach → Gmail.** The agent drafts the emails; connect Gmail so
+   it can send the ones you approve. (Authorize the Gmail connector in an
+   interactive session — OAuth can't be done headless.)
 
 ## Status of integrations
 
@@ -22,6 +54,11 @@ plumbing is at different stages. This table is the source of truth:
 | LLM-completed methods (briefs, buyers, pricing, board) | ✅ Implemented | Filled in by nooa at runtime |
 | Deterministic state helpers | ✅ Implemented | `agents/logic.py`, unit-tested |
 | Local state persistence | ✅ Implemented | JSON on disk (`agents/state.py`) |
+| Live site reading | ✅ Implemented | `agents/site.py` fetches + parses the real page; `agent.fetch_site()` |
+| For-sale / checkout model | ✅ Implemented | `for_sale` + `buy_url` on `ArtPiece`; `get_sellable()` |
+| Payments (checkout links) | 🔌 Bring your own | Per-piece Stripe/Gumroad link in `buy_url` (see **Hook it up**) |
+| Real buyer search (named ND leads) | 🔌 Needs API key | `ART_MANAGER_SEARCH_API_KEY`; without it buyers stay AI-guessed |
+| Send outreach email | 🔌 Needs Gmail | Agent drafts; connect Gmail to send |
 | Google Drive persistence | 🚧 Planned | Folder IDs are configured; no Drive client is wired up yet |
 | 3-day printout automation | 🚧 Planned | No scheduler exists in this repo yet |
 | Site changes via GitHub PR | 🚧 Planned | The agent produces PR instructions; it does not open PRs itself |

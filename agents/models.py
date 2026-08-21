@@ -35,6 +35,11 @@ class ArtPiece(BaseModel):
     price: float | None = None
     notes: str = ""
     outdoor_ready: bool = False
+    # Selling: whether this piece is actively offered for sale, and the direct
+    # checkout link (e.g. a Stripe Payment Link or Gumroad URL) buyers click to
+    # pay. A portfolio-only piece has for_sale=False and no buy_url.
+    for_sale: bool = False
+    buy_url: str | None = None
 
 
 class ContentItem(BaseModel):
@@ -70,6 +75,36 @@ class ResearchInsight(BaseModel):
     confidence: Literal["high", "medium", "low"]
 
 
+class SiteImage(BaseModel):
+    src: str
+    alt: str = ""
+
+
+class SiteSnapshot(BaseModel):
+    """What the agent actually saw when it read the live website.
+
+    Produced by ``agents.site`` from the real page HTML (and any config script),
+    so downstream analysis is grounded in the current site instead of guesses.
+    """
+
+    url: str
+    fetched_at: str = ""
+    ok: bool = False
+    status: int | None = None
+    title: str = ""
+    description: str = ""
+    text: str = ""  # visible text, script/style stripped and whitespace-collapsed
+    images: list[SiteImage] = Field(default_factory=list)
+    links: list[str] = Field(default_factory=list)
+    emails: list[str] = Field(default_factory=list)
+    phones: list[str] = Field(default_factory=list)
+    prices: list[str] = Field(default_factory=list)  # e.g. ["$450", "$1,200"]
+    scripts: list[str] = Field(default_factory=list)  # script src URLs
+    # Raw contents of referenced data scripts (e.g. js/config.js), truncated.
+    data_scripts: dict[str, str] = Field(default_factory=dict)
+    error: str = ""
+
+
 class AgentState(BaseModel):
     """Serializable snapshot of the agent's mutable business state."""
 
@@ -80,3 +115,5 @@ class AgentState(BaseModel):
     focus_this_week: str = "finish and list highest-leverage pieces"
     last_research: list[ResearchInsight] = Field(default_factory=list)
     pending_changes: list[SiteChange] = Field(default_factory=list)
+    # What the agent learned from the live site on its last read.
+    last_site_snapshot: SiteSnapshot | None = None
