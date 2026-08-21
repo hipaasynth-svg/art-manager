@@ -70,8 +70,8 @@ built lazily the first time `ArtManagerAgent` is accessed.
 
 ## Setup
 
-`nooa` is not on public PyPI — install it from your private source (see
-`requirements.txt`), then:
+Requires **Python 3.12 or 3.13** (the [`nooa`](https://github.com/NVIDIA-NeMo/labs-OO-Agents)
+runtime does not support 3.11 or 3.14+).
 
 ```bash
 pip install -r requirements.txt
@@ -99,15 +99,17 @@ override with `ART_MANAGER_STATE_PATH`.
 
 ## Tests
 
-The unit tests cover the framework-agnostic modules and need only pydantic +
-pytest (no nooa):
+The framework-agnostic tests (models/logic/config/state) need only pydantic +
+pytest and run on any interpreter. On Python 3.12/3.13 the additional nooa
+regression tests run too; elsewhere they skip automatically.
 
 ```bash
 pip install -r requirements-dev.txt
 python -m pytest -q
 ```
 
-CI runs these on every push and pull request (`.github/workflows/ci.yml`).
+CI runs the suite on Python 3.12 and 3.13 on every push and pull request
+(`.github/workflows/ci.yml`).
 
 ## Safety model
 

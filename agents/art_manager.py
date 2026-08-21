@@ -22,8 +22,6 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from pydantic import Field
-
 from nooa import Agent
 
 from . import logic
@@ -85,9 +83,17 @@ def _build_agent_class() -> type:
         """
 
         # === State ===
-        pieces: list[ArtPiece] = Field(default_factory=list)
-        content_queue: list[ContentItem] = Field(default_factory=list)
-        pipeline: SalesPipeline = Field(default_factory=SalesPipeline)
+        # nooa's Agent is a plain object (not a pydantic model), so class-level
+        # ``Field(default_factory=...)`` is NOT materialised into per-instance
+        # values — it would leave a FieldInfo on the class. Mutable state is
+        # therefore declared as bare annotations here and initialised per
+        # instance in __init__; only immutable scalars keep class-level defaults.
+        pieces: list[ArtPiece]
+        content_queue: list[ContentItem]
+        pipeline: SalesPipeline
+        last_research: list[ResearchInsight]
+        pending_changes: list[SiteChange]
+
         monthly_revenue_goal: float = _CONFIG.monthly_revenue_goal
         focus_this_week: str = "finish and list highest-leverage pieces"
 
@@ -95,8 +101,6 @@ def _build_agent_class() -> type:
         github_owner: str = _CONFIG.github_owner
         github_repo: str = _CONFIG.github_repo
         default_branch: str = _CONFIG.default_branch
-        last_research: list[ResearchInsight] = Field(default_factory=list)
-        pending_changes: list[SiteChange] = Field(default_factory=list)
 
         # Google Drive (live folders)
         drive_root_folder_id: str = _CONFIG.drive_root_folder_id
@@ -107,6 +111,16 @@ def _build_agent_class() -> type:
 
         # Local state persistence
         state_path: str = _CONFIG.state_path
+
+        def __init__(self, **kwargs) -> None:
+            # Pass through llm / storage / context etc. to nooa's Agent, then
+            # give each mutable field a fresh per-instance default.
+            super().__init__(**kwargs)
+            self.pieces = []
+            self.content_queue = []
+            self.pipeline = SalesPipeline()
+            self.last_research = []
+            self.pending_changes = []
 
         # === Deterministic helpers (delegate to pure logic) ===
         def get_finished_unlisted(self) -> list[ArtPiece]:

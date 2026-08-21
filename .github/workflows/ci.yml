@@ -10,7 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        # nooa requires Python >=3.12,<3.14.
+        python-version: ["3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
 
@@ -19,13 +20,15 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install test dependencies
-        # The unit tests cover the framework-agnostic models, logic, config,
-        # and state — none of which require nooa — so we install only pydantic
-        # and pytest here.
+      - name: Install dependencies
+        # Installs the full runtime (including nooa) so the nooa regression
+        # tests run too; the framework-agnostic tests need only pydantic.
         run: |
           python -m pip install --upgrade pip
-          pip install "pydantic>=2.0,<3.0" "pytest>=8.0,<9.0"
+          pip install -r requirements-dev.txt
 
       - name: Run tests
+        # Dummy key: agent construction builds an LLM client but makes no request.
+        env:
+          ANTHROPIC_API_KEY: test-not-called
         run: python -m pytest -q
