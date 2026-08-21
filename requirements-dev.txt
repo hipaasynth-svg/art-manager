@@ -1,0 +1,6 @@
+# Dev/test dependencies: the full runtime plus the test runner.
+# This pulls in nooa (Python >=3.12,<3.14), so the nooa regression tests run.
+# The framework-agnostic tests (models/logic/config/state) also pass without
+# nooa — install just `pydantic` + `pytest` if you're on an older interpreter.
+-r requirements.txt
+pytest>=8.0,<9.0
