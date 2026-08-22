@@ -24,7 +24,7 @@ from functools import lru_cache
 
 from nooa import Agent
 
-from . import logic
+from . import logic, site
 from .config import Config, load_config
 from .models import (
     AgentState,
@@ -33,6 +33,7 @@ from .models import (
     ResearchInsight,
     SalesPipeline,
     SiteChange,
+    SiteSnapshot,
 )
 from .state import load_state, save_state
 
@@ -93,6 +94,7 @@ def _build_agent_class() -> type:
         pipeline: SalesPipeline
         last_research: list[ResearchInsight]
         pending_changes: list[SiteChange]
+        last_site_snapshot: SiteSnapshot | None
 
         monthly_revenue_goal: float = _CONFIG.monthly_revenue_goal
         focus_this_week: str = "finish and list highest-leverage pieces"
@@ -101,6 +103,7 @@ def _build_agent_class() -> type:
         github_owner: str = _CONFIG.github_owner
         github_repo: str = _CONFIG.github_repo
         default_branch: str = _CONFIG.default_branch
+        site_url: str = _CONFIG.site_url
 
         # Google Drive (live folders)
         drive_root_folder_id: str = _CONFIG.drive_root_folder_id
@@ -121,6 +124,7 @@ def _build_agent_class() -> type:
             self.pipeline = SalesPipeline()
             self.last_research = []
             self.pending_changes = []
+            self.last_site_snapshot = None
 
         # === Deterministic helpers (delegate to pure logic) ===
         def get_finished_unlisted(self) -> list[ArtPiece]:
@@ -128,6 +132,25 @@ def _build_agent_class() -> type:
 
         def get_in_progress(self) -> list[ArtPiece]:
             return logic.in_progress(self.pieces)
+
+        def get_for_sale(self) -> list[ArtPiece]:
+            return logic.for_sale_pieces(self.pieces)
+
+        def get_sellable(self) -> list[ArtPiece]:
+            """For-sale pieces with a price and a checkout link (buyer can pay now)."""
+            return logic.sellable_pieces(self.pieces)
+
+        def fetch_site(self) -> SiteSnapshot:
+            """Read the live website and remember what was there.
+
+            Runs a real HTTP fetch of ``self.site_url`` (works wherever outbound
+            access to the site is allowed), stores the result on
+            ``self.last_site_snapshot``, and returns it. Never raises — a failed
+            read comes back as a snapshot with ``ok=False`` and an ``error``.
+            """
+            snap = site.fetch_site(self.site_url)
+            self.last_site_snapshot = snap
+            return snap
 
         def revenue_gap(self) -> float:
             return logic.revenue_gap(
@@ -154,6 +177,7 @@ def _build_agent_class() -> type:
                 focus_this_week=self.focus_this_week,
                 last_research=self.last_research,
                 pending_changes=self.pending_changes,
+                last_site_snapshot=self.last_site_snapshot,
             )
 
         def apply_state(self, state: AgentState) -> None:
@@ -164,6 +188,7 @@ def _build_agent_class() -> type:
             self.focus_this_week = state.focus_this_week
             self.last_research = state.last_research
             self.pending_changes = state.pending_changes
+            self.last_site_snapshot = state.last_site_snapshot
 
         def save(self, path: str | None = None) -> None:
             save_state(self.to_state(), path or self.state_path)
@@ -275,12 +300,21 @@ def _build_agent_class() -> type:
             """
             ...
 
-        async def analyze_current_site(self) -> str:
+        async def analyze_current_site(self, snapshot: SiteSnapshot) -> str:
             """
-            Diagnose codycarlson.art (especially js/config.js, index.html, css/styles.css)
-            against the latest research insights.
-            Produce a clear diagnosis: what is working, what is weak, and the top 3–5
-            highest-leverage improvements.
+            Diagnose the REAL website using the provided `snapshot` — the actual
+            page title, text, images, prices, contact info, links, and any
+            config/data script the agent just read. Do not invent content; work
+            only from what the snapshot shows (if snapshot.ok is False, say the
+            site could not be read and stop).
+
+            Judge it as a tool for SELLING art:
+            - Is it clear what is for sale and at what price? Can a buyer actually
+              buy or inquire (checkout link, contact, commission CTA)?
+            - Trust signals, story, photo quality, mobile, load.
+            Compare against self.last_research when present. Produce a clear
+            diagnosis: what works, what's weak, and the top 3–5 highest-leverage
+            improvements — each tied to something concrete in the snapshot.
             """
             ...
 

@@ -29,6 +29,19 @@ def test_in_progress_filter():
     assert [p.id for p in logic.in_progress(pieces)] == ["a"]
 
 
+def test_for_sale_and_sellable():
+    portfolio = _piece("a", "finished")  # for_sale defaults False
+    listed = ArtPiece(id="b", title="B", medium="t", status="finished", for_sale=True)
+    ready = ArtPiece(
+        id="c", title="C", medium="t", status="finished",
+        for_sale=True, price=450.0, buy_url="https://buy.stripe.com/test",
+    )
+    pieces = [portfolio, listed, ready]
+    assert [p.id for p in logic.for_sale_pieces(pieces)] == ["b", "c"]
+    # Only the one with a price AND a checkout link is sellable right now.
+    assert [p.id for p in logic.sellable_pieces(pieces)] == ["c"]
+
+
 def test_revenue_gap_never_negative():
     assert logic.revenue_gap(2000.0, 500.0) == 1500.0
     assert logic.revenue_gap(2000.0, 2500.0) == 0.0

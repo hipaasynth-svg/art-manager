@@ -1,0 +1,158 @@
+"""
+Read the live website so the agent works from what is really there.
+
+``parse_site`` is a pure function (HTML string -> SiteSnapshot) with no network,
+so it is fully unit-testable. ``fetch_site`` does the actual HTTP fetch and then
+parses; it runs on the user's machine (where outbound access to the site is
+open) and degrades gracefully to ``ok=False`` with an ``error`` on any failure.
+
+Deliberately dependency-free (stdlib ``urllib`` + ``html.parser``) so there's
+nothing extra to install.
+"""
+
+from __future__ import annotations
+
+import re
+from datetime import datetime, timezone
+from html.parser import HTMLParser
+from urllib.parse import urljoin, urlparse
+from urllib.request import Request, urlopen
+
+from .models import SiteImage, SiteSnapshot
+
+_PRICE_RE = re.compile(r"\$\s?\d[\d,]*(?:\.\d{2})?")
+_EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
+_PHONE_RE = re.compile(r"(?:\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}")
+_WS_RE = re.compile(r"\s+")
+
+_SKIP_TEXT_TAGS = {"script", "style", "noscript", "template"}
+_USER_AGENT = "ArtManagerAgent/0.1 (+https://codycarlson.art)"
+_MAX_SCRIPT_CHARS = 20_000
+
+
+class _Extractor(HTMLParser):
+    """Pull structured bits out of a page: title, meta, text, images, links."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.title = ""
+        self.description = ""
+        self.text_parts: list[str] = []
+        self.images: list[SiteImage] = []
+        self.links: list[str] = []
+        self.scripts: list[str] = []
+        self._skip_depth = 0
+        self._in_title = False
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        a = {k: (v or "") for k, v in attrs}
+        if tag in _SKIP_TEXT_TAGS:
+            self._skip_depth += 1
+        if tag == "title":
+            self._in_title = True
+        elif tag == "meta":
+            name = a.get("name", "").lower() or a.get("property", "").lower()
+            if name in ("description", "og:description") and a.get("content"):
+                if not self.description:
+                    self.description = a["content"].strip()
+        elif tag == "img" and a.get("src"):
+            self.images.append(SiteImage(src=a["src"], alt=a.get("alt", "").strip()))
+        elif tag == "a" and a.get("href"):
+            self.links.append(a["href"])
+        elif tag == "script" and a.get("src"):
+            self.scripts.append(a["src"])
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in _SKIP_TEXT_TAGS and self._skip_depth > 0:
+            self._skip_depth -= 1
+        if tag == "title":
+            self._in_title = False
+
+    def handle_data(self, data: str) -> None:
+        if self._in_title:
+            self.title += data
+        if self._skip_depth == 0:
+            stripped = data.strip()
+            if stripped:
+                self.text_parts.append(stripped)
+
+
+def _dedupe(seq: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for item in seq:
+        if item not in seen:
+            seen.add(item)
+            out.append(item)
+    return out
+
+
+def parse_site(html: str, url: str) -> SiteSnapshot:
+    """Parse page HTML into a SiteSnapshot. Pure; no network."""
+    ex = _Extractor()
+    ex.feed(html)
+
+    text = _WS_RE.sub(" ", " ".join(ex.text_parts)).strip()
+
+    # mailto:/tel: links are the most reliable contact signal; also scan text.
+    emails = [l.split(":", 1)[1].split("?")[0] for l in ex.links if l.lower().startswith("mailto:")]
+    emails += _EMAIL_RE.findall(html)
+    phones = [l.split(":", 1)[1] for l in ex.links if l.lower().startswith("tel:")]
+    phones += _PHONE_RE.findall(text)
+
+    return SiteSnapshot(
+        url=url,
+        fetched_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        ok=True,
+        title=_WS_RE.sub(" ", ex.title).strip(),
+        description=ex.description,
+        text=text,
+        images=[SiteImage(src=urljoin(url, i.src), alt=i.alt) for i in ex.images],
+        links=_dedupe([urljoin(url, l) for l in ex.links if not l.lower().startswith(("mailto:", "tel:", "javascript:"))]),
+        emails=_dedupe([e.strip() for e in emails if e.strip()]),
+        phones=_dedupe([p.strip() for p in phones if p.strip()]),
+        prices=_dedupe(_PRICE_RE.findall(text)),
+        scripts=_dedupe([urljoin(url, s) for s in ex.scripts]),
+    )
+
+
+def _get(url: str, timeout: float) -> str:
+    req = Request(url, headers={"User-Agent": _USER_AGENT})
+    with urlopen(req, timeout=timeout) as resp:  # noqa: S310 - trusted own site
+        charset = resp.headers.get_content_charset() or "utf-8"
+        return resp.read().decode(charset, errors="replace")
+
+
+def fetch_site(
+    url: str,
+    *,
+    timeout: float = 15.0,
+    fetch_data_scripts: bool = True,
+) -> SiteSnapshot:
+    """Fetch ``url`` and parse it. Also pulls same-origin data scripts
+    (e.g. ``js/config.js``) whose contents often hold the piece/catalog data.
+
+    Never raises for network/HTTP problems — returns ``ok=False`` with ``error``.
+    """
+    try:
+        html = _get(url, timeout)
+    except Exception as exc:  # noqa: BLE001 - fetch must be resilient
+        return SiteSnapshot(
+            url=url,
+            fetched_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            ok=False,
+            error=f"{type(exc).__name__}: {exc}",
+        )
+
+    snap = parse_site(html, url)
+
+    if fetch_data_scripts:
+        origin = urlparse(url).netloc
+        for src in snap.scripts:
+            name = src.rsplit("/", 1)[-1].lower()
+            if urlparse(src).netloc == origin and ("config" in name or "data" in name or "pieces" in name):
+                try:
+                    snap.data_scripts[src] = _get(src, timeout)[:_MAX_SCRIPT_CHARS]
+                except Exception:  # noqa: BLE001 - best effort
+                    continue
+    return snap

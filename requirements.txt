@@ -7,3 +7,6 @@
 nooa>=0.0.8,<0.1
 
 pydantic>=2.0,<3.0
+
+# Loads a project-root .env into the environment automatically (config.py).
+python-dotenv>=1.0,<2.0

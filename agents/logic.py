@@ -25,6 +25,18 @@ def in_progress(pieces: list[ArtPiece]) -> list[ArtPiece]:
     return [p for p in pieces if p.status == "in_progress"]
 
 
+def for_sale_pieces(pieces: list[ArtPiece]) -> list[ArtPiece]:
+    """Pieces the artist is actively offering for sale (for_sale=True)."""
+    return [p for p in pieces if p.for_sale]
+
+
+def sellable_pieces(pieces: list[ArtPiece]) -> list[ArtPiece]:
+    """For-sale pieces that a buyer could actually pay for right now:
+    marked for sale, with a price and a checkout link.
+    """
+    return [p for p in pieces if p.for_sale and p.price is not None and p.buy_url]
+
+
 def revenue_gap(monthly_goal: float, revenue_this_month: float) -> float:
     """Remaining revenue needed to hit the monthly goal (never negative)."""
     return max(0.0, monthly_goal - revenue_this_month)

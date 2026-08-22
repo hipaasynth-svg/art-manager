@@ -5,6 +5,10 @@ Every value has a default that preserves the project's current behaviour, so
 nothing here is required to run locally. Override any of them via the
 environment (see ``.env.example``) to point at a different site, model, or set
 of Google Drive folders without editing code.
+
+A local ``.env`` file at the project root is loaded automatically on import
+(via python-dotenv), so keys like ANTHROPIC_API_KEY just work without any
+manual ``export``. Real environment variables always win over ``.env``.
 """
 
 from __future__ import annotations
@@ -16,6 +20,28 @@ from dataclasses import dataclass
 DEFAULT_MODEL = "claude-opus-4-8"
 
 
+def load_env(path: str | None = None) -> bool:
+    """Load a ``.env`` file into the process environment.
+
+    Uses python-dotenv if installed; a no-op (returns False) if it isn't, so the
+    package still works without the dependency. Existing real environment
+    variables are never overridden. With no ``path``, searches upward from the
+    current directory for a ``.env``. Returns True if a file was loaded.
+    """
+    try:
+        from dotenv import find_dotenv, load_dotenv
+    except ImportError:
+        return False
+    dotenv_path = path or find_dotenv(usecwd=True)
+    if not dotenv_path:
+        return False
+    return load_dotenv(dotenv_path, override=False)
+
+
+# Auto-load .env on import so a project-root .env "just works".
+load_env()
+
+
 @dataclass(frozen=True)
 class Config:
     # LLM
@@ -25,6 +51,7 @@ class Config:
     github_owner: str = "hipaasynth-svg"
     github_repo: str = "codycarlson.art"
     default_branch: str = "main"
+    site_url: str = "https://codycarlson.art"
 
     # Google Drive folder IDs
     drive_root_folder_id: str = "1uzI3VXasnvl-4_KemHN60dgwBP1_q4vr"
@@ -52,6 +79,7 @@ def load_config() -> Config:
         github_owner=_env("ART_MANAGER_GITHUB_OWNER", d.github_owner),
         github_repo=_env("ART_MANAGER_GITHUB_REPO", d.github_repo),
         default_branch=_env("ART_MANAGER_DEFAULT_BRANCH", d.default_branch),
+        site_url=_env("ART_MANAGER_SITE_URL", d.site_url),
         drive_root_folder_id=_env("ART_MANAGER_DRIVE_ROOT_ID", d.drive_root_folder_id),
         drive_printouts_id=_env("ART_MANAGER_DRIVE_PRINTOUTS_ID", d.drive_printouts_id),
         drive_briefs_id=_env("ART_MANAGER_DRIVE_BRIEFS_ID", d.drive_briefs_id),
