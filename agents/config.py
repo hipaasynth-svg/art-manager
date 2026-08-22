@@ -5,6 +5,10 @@ Every value has a default that preserves the project's current behaviour, so
 nothing here is required to run locally. Override any of them via the
 environment (see ``.env.example``) to point at a different site, model, or set
 of Google Drive folders without editing code.
+
+A local ``.env`` file at the project root is loaded automatically on import
+(via python-dotenv), so keys like ANTHROPIC_API_KEY just work without any
+manual ``export``. Real environment variables always win over ``.env``.
 """
 
 from __future__ import annotations
@@ -14,6 +18,28 @@ from dataclasses import dataclass
 
 # Default LLM used for creative / sales / agentic work.
 DEFAULT_MODEL = "claude-opus-4-8"
+
+
+def load_env(path: str | None = None) -> bool:
+    """Load a ``.env`` file into the process environment.
+
+    Uses python-dotenv if installed; a no-op (returns False) if it isn't, so the
+    package still works without the dependency. Existing real environment
+    variables are never overridden. With no ``path``, searches upward from the
+    current directory for a ``.env``. Returns True if a file was loaded.
+    """
+    try:
+        from dotenv import find_dotenv, load_dotenv
+    except ImportError:
+        return False
+    dotenv_path = path or find_dotenv(usecwd=True)
+    if not dotenv_path:
+        return False
+    return load_dotenv(dotenv_path, override=False)
+
+
+# Auto-load .env on import so a project-root .env "just works".
+load_env()
 
 
 @dataclass(frozen=True)

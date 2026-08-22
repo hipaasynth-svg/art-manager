@@ -16,6 +16,38 @@ def test_defaults(monkeypatch):
     assert cfg.monthly_revenue_goal == 2000.0
 
 
+def test_dotenv_file_is_loaded(tmp_path, monkeypatch):
+    import pytest
+
+    pytest.importorskip("dotenv")
+    monkeypatch.delenv("ART_MANAGER_MODEL", raising=False)
+    env_file = tmp_path / ".env"
+    env_file.write_text("ART_MANAGER_MODEL=from-dotenv\n", encoding="utf-8")
+
+    from agents.config import load_config, load_env
+
+    try:
+        assert load_env(str(env_file)) is True
+        assert load_config().model == "from-dotenv"
+    finally:
+        # load_dotenv sets os.environ directly; clean up so other tests are unaffected.
+        __import__("os").environ.pop("ART_MANAGER_MODEL", None)
+
+
+def test_real_env_wins_over_dotenv(tmp_path, monkeypatch):
+    import pytest
+
+    pytest.importorskip("dotenv")
+    monkeypatch.setenv("ART_MANAGER_MODEL", "real-env")
+    env_file = tmp_path / ".env"
+    env_file.write_text("ART_MANAGER_MODEL=from-dotenv\n", encoding="utf-8")
+
+    from agents.config import load_config, load_env
+
+    load_env(str(env_file))  # override=False → must not clobber the real value
+    assert load_config().model == "real-env"
+
+
 def test_env_overrides(monkeypatch):
     monkeypatch.setenv("ART_MANAGER_MODEL", "claude-sonnet-5")
     monkeypatch.setenv("ART_MANAGER_GITHUB_REPO", "example.art")

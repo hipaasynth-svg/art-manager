@@ -112,9 +112,12 @@ runtime does not support 3.11 or 3.14+).
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env   # then fill in ANTHROPIC_API_KEY
-export ANTHROPIC_API_KEY=your_key_here
+cp .env.example .env   # then open .env and paste your ANTHROPIC_API_KEY
 ```
+
+The project-root `.env` is loaded automatically on startup, so no `export` is
+needed — just keep your keys in `.env`. (Real environment variables still win
+over `.env` if you set both.)
 
 ## Configuration
 
