@@ -7,7 +7,7 @@ imported and unit-tested without the nooa runtime or an LLM.
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -100,7 +100,9 @@ class SiteSnapshot(BaseModel):
     phones: list[str] = Field(default_factory=list)
     prices: list[str] = Field(default_factory=list)  # e.g. ["$450", "$1,200"]
     scripts: list[str] = Field(default_factory=list)  # script src URLs
-    # Raw contents of referenced data scripts (e.g. js/config.js), truncated.
+    # Raw gallery API response used to build this snapshot.
+    gallery_data: dict[str, Any] = Field(default_factory=dict)
+    # Retained for compatibility with older saved snapshots.
     data_scripts: dict[str, str] = Field(default_factory=dict)
     error: str = ""
 
