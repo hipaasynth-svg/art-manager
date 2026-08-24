@@ -21,6 +21,7 @@ or network access.
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Any
 
 from nooa import Agent
 
@@ -140,14 +141,16 @@ def _build_agent_class() -> type:
             """For-sale pieces with a price and a checkout link (buyer can pay now)."""
             return logic.sellable_pieces(self.pieces)
 
-        def fetch_site(self) -> SiteSnapshot:
-            """Read the live website and remember what was there.
+        def fetch_gallery(self) -> dict[str, Any]:
+            """Fetch the live gallery JSON for agent use.
 
-            Runs a real HTTP fetch of ``self.site_url`` (works wherever outbound
-            access to the site is allowed), stores the result on
-            ``self.last_site_snapshot``, and returns it. Never raises — a failed
-            read comes back as a snapshot with ``ok=False`` and an ``error``.
+            This uses the site's structured ``/api/gallery`` endpoint rather than
+            scraping HTML, so the model receives the real catalog data.
             """
+            return site.fetch_gallery(self.site_url)
+
+        def fetch_site(self) -> SiteSnapshot:
+            """Read the live gallery API and remember a usable summary."""
             snap = site.fetch_site(self.site_url)
             self.last_site_snapshot = snap
             return snap
