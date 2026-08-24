@@ -19,10 +19,10 @@ The agent's LLM-completed capabilities:
 The site is a portfolio today. Four plug-in points turn it into something that
 sells — each is independent, wire them in any order:
 
-1. **Read the live site — already wired.** `agent.fetch_site()` fetches
-   `ART_MANAGER_SITE_URL` (default `https://codycarlson.art`), extracts pieces,
-   images, prices, contact info, and any `js/config.js` data, and remembers it.
-   Nothing to configure; it just works on a machine with internet access.
+1. **Read the live gallery — already wired.** `agent.fetch_gallery()` fetches
+ `https://codycarlson.art/api/gallery` and returns the real JSON catalog.
+ `agent.fetch_site()` keeps the same snapshot interface while summarizing that
+ API response. No HTML page or `js/config.js` scraping is used.
 
 2. **Mark what's for sale.** A piece becomes sellable when it has
    `for_sale=True`, a `price`, and a `buy_url`. Set these on the `ArtPiece`
@@ -54,7 +54,7 @@ plumbing is at different stages. This table is the source of truth:
 | LLM-completed methods (briefs, buyers, pricing, board) | ✅ Implemented | Filled in by nooa at runtime |
 | Deterministic state helpers | ✅ Implemented | `agents/logic.py`, unit-tested |
 | Local state persistence | ✅ Implemented | JSON on disk (`agents/state.py`) |
-| Live site reading | ✅ Implemented | `agents/site.py` fetches + parses the real page; `agent.fetch_site()` |
+| Live gallery reading | ✅ Implemented | `agents/site.py` fetches `/api/gallery`; `agent.fetch_gallery()` returns the JSON |
 | For-sale / checkout model | ✅ Implemented | `for_sale` + `buy_url` on `ArtPiece`; `get_sellable()` |
 | Payments (checkout links) | 🔌 Bring your own | Per-piece Stripe/Gumroad link in `buy_url` (see **Hook it up**) |
 | Real buyer search (named ND leads) | 🔌 Needs API key | `ART_MANAGER_SEARCH_API_KEY`; without it buyers stay AI-guessed |

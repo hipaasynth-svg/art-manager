@@ -1,10 +1,9 @@
 """
 Read the live website so the agent works from what is really there.
 
-``parse_site`` is a pure function (HTML string -> SiteSnapshot) with no network,
-so it is fully unit-testable. ``fetch_site`` does the actual HTTP fetch and then
-parses; it runs on the user's machine (where outbound access to the site is
-open) and degrades gracefully to ``ok=False`` with an ``error`` on any failure.
+``parse_site`` remains a pure, backwards-compatible helper for old snapshots.
+Live reads use the site's structured ``/api/gallery`` response instead of
+scraping HTML, and degrade gracefully to ``ok=False`` with an ``error``.
 
 Deliberately dependency-free (stdlib ``urllib`` + ``html.parser``) so there's
 nothing extra to install.
@@ -12,10 +11,12 @@ nothing extra to install.
 
 from __future__ import annotations
 
+import json
 import re
 from datetime import datetime, timezone
 from html.parser import HTMLParser
-from urllib.parse import urljoin, urlparse
+from typing import Any
+from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
 from .models import SiteImage, SiteSnapshot
@@ -123,36 +124,60 @@ def _get(url: str, timeout: float) -> str:
         return resp.read().decode(charset, errors="replace")
 
 
+def fetch_gallery(url: str, *, timeout: float = 15.0) -> dict[str, Any]:
+    """Fetch the live gallery JSON from ``url``'s API.
+
+    The response is returned unchanged so the NOOA agent can reason over the
+    site's real catalog fields (paintings, galleries, prices, and statuses).
+    Network and invalid-JSON failures are represented in a small error object
+    rather than raised, matching the reader's resilient behavior.
+    """
+    api_url = f"{url.rstrip('/')}/api/gallery"
+    try:
+        payload = json.loads(_get(api_url, timeout))
+        if not isinstance(payload, dict):
+            raise ValueError("gallery API response must be a JSON object")
+        return payload
+    except Exception as exc:  # noqa: BLE001 - fetch must be resilient
+        return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+
+
 def fetch_site(
     url: str,
     *,
     timeout: float = 15.0,
     fetch_data_scripts: bool = True,
 ) -> SiteSnapshot:
-    """Fetch ``url`` and parse it. Also pulls same-origin data scripts
-    (e.g. ``js/config.js``) whose contents often hold the piece/catalog data.
+    """Fetch the structured gallery API and summarize it as a SiteSnapshot.
 
-    Never raises for network/HTTP problems — returns ``ok=False`` with ``error``.
+    ``fetch_data_scripts`` is retained as a no-op compatibility argument for
+    callers of the previous HTML reader. No HTML page or data script is fetched.
     """
-    try:
-        html = _get(url, timeout)
-    except Exception as exc:  # noqa: BLE001 - fetch must be resilient
-        return SiteSnapshot(
-            url=url,
-            fetched_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            ok=False,
-            error=f"{type(exc).__name__}: {exc}",
-        )
-
-    snap = parse_site(html, url)
-
-    if fetch_data_scripts:
-        origin = urlparse(url).netloc
-        for src in snap.scripts:
-            name = src.rsplit("/", 1)[-1].lower()
-            if urlparse(src).netloc == origin and ("config" in name or "data" in name or "pieces" in name):
-                try:
-                    snap.data_scripts[src] = _get(src, timeout)[:_MAX_SCRIPT_CHARS]
-                except Exception:  # noqa: BLE001 - best effort
-                    continue
-    return snap
+    del fetch_data_scripts
+    gallery = fetch_gallery(url, timeout=timeout)
+    failed = gallery.get("ok") is False
+    paintings = gallery.get("paintings", [])
+    painting_count = len(paintings) if isinstance(paintings, list) else 0
+    prices = [
+        f"${painting['price']}"
+        for painting in paintings
+        if isinstance(painting, dict) and painting.get("price") not in (None, "")
+    ]
+    image_urls = [
+        image
+        for images in gallery.get("galleries", {}).values()
+        if isinstance(images, list)
+        for image in images
+        if isinstance(image, str)
+    ] if isinstance(gallery.get("galleries"), dict) else []
+    return SiteSnapshot(
+        url=f"{url.rstrip('/')}/api/gallery",
+        fetched_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        ok=not failed,
+        title="Cody Carlson Gallery",
+        text=f"Gallery API returned {painting_count} paintings.",
+        images=[SiteImage(src=image) for image in image_urls],
+        prices=_dedupe(prices),
+        gallery_data=gallery,
+        error=str(gallery.get("error", "")),
+    )

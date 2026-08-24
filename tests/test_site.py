@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from agents.site import parse_site
+from agents.site import fetch_gallery, fetch_site, parse_site
 
 SAMPLE = """
 <!doctype html>
@@ -68,3 +68,28 @@ def test_script_text_excluded_from_visible_text():
     s = _snap()
     assert "do not index" not in s.text
     assert "Summer Walleye" in s.text
+
+
+def test_fetch_gallery_returns_api_json(monkeypatch):
+    payload = '{"galleries":{"featured":["https://example.com/featured.jpg"]},"paintings":[{"title":"Buffalo","price":"230.40"}]}'
+    monkeypatch.setattr("agents.site._get", lambda url, timeout: payload)
+
+    assert fetch_gallery("https://codycarlson.art") == {
+        "galleries": {"featured": ["https://example.com/featured.jpg"]},
+        "paintings": [{"title": "Buffalo", "price": "230.40"}],
+    }
+
+
+def test_fetch_site_uses_gallery_endpoint(monkeypatch):
+    seen = []
+    monkeypatch.setattr(
+        "agents.site._get",
+        lambda url, timeout: seen.append(url) or '{"paintings":[{"price":"230.40"}]}',
+    )
+
+    snapshot = fetch_site("https://codycarlson.art")
+
+    assert seen == ["https://codycarlson.art/api/gallery"]
+    assert snapshot.ok is True
+    assert snapshot.gallery_data == {"paintings": [{"price": "230.40"}]}
+    assert snapshot.prices == ["$230.40"]
