@@ -95,9 +95,11 @@ def parse_site(html: str, url: str) -> SiteSnapshot:
 
     text = _WS_RE.sub(" ", " ".join(ex.text_parts)).strip()
 
-    # mailto:/tel: links are the most reliable contact signal; also scan text.
+    # mailto:/tel: links are the most reliable contact signal; also scan the
+    # visible text (not raw HTML) so addresses buried in <script>/<style> bodies
+    # aren't mistaken for real contact info, matching how prices/phones are read.
     emails = [l.split(":", 1)[1].split("?")[0] for l in ex.links if l.lower().startswith("mailto:")]
-    emails += _EMAIL_RE.findall(html)
+    emails += _EMAIL_RE.findall(text)
     phones = [l.split(":", 1)[1] for l in ex.links if l.lower().startswith("tel:")]
     phones += _PHONE_RE.findall(text)
 
