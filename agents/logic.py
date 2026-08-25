@@ -12,6 +12,8 @@ from typing import Any
 
 from .models import PIECE_STATUSES, ArtPiece, PieceStatus
 
+DEFAULT_SITE_URL = "https://www.codycarlson.art"
+
 
 def finished_unlisted(pieces: list[ArtPiece]) -> list[ArtPiece]:
     """Pieces that are finished but not yet listed or sold.
@@ -94,12 +96,29 @@ def _map_gallery_status(raw: Any) -> tuple[PieceStatus, bool]:
     return "listed", True
 
 
-def pieces_from_gallery(gallery: dict[str, Any]) -> list[ArtPiece]:
+def checkout_deep_link(piece_id: str, site_url: str = DEFAULT_SITE_URL) -> str:
+    """Shareable link that opens on-site Stripe Checkout for ``piece_id``."""
+    base = (site_url or DEFAULT_SITE_URL).rstrip("/")
+    # Prefer www canonical so redirects don't drop the query in edge cases.
+    if base == "https://codycarlson.art":
+        base = "https://www.codycarlson.art"
+    return f"{base}/?buy={piece_id}"
+
+
+def pieces_from_gallery(
+    gallery: dict[str, Any],
+    *,
+    site_url: str = DEFAULT_SITE_URL,
+) -> list[ArtPiece]:
     """Convert the live ``/api/gallery`` JSON into ArtPiece records.
 
     Only the ``paintings`` array is treated as inventory. Portfolio galleries
     (featured / studio / stones) are display-only and are not turned into pieces.
     Malformed entries are skipped rather than raising.
+
+    If a piece has a price (or is for sale) but no Stripe Payment Link, ``buy_url``
+    is filled with the site deep link ``?buy=<id>`` so outreach can share a
+    working checkout URL.
     """
     if not isinstance(gallery, dict) or gallery.get("ok") is False:
         return []
@@ -124,6 +143,12 @@ def pieces_from_gallery(gallery: dict[str, Any]) -> list[ArtPiece]:
         else:
             buy = None
 
+        price = _parse_price(item.get("price"))
+        # On-site Stripe Checkout works from price alone; give the agent a
+        # shareable deep link when no explicit Payment Link is set.
+        if for_sale and price is not None and not buy:
+            buy = checkout_deep_link(pid, site_url)
+
         image = item.get("url") or item.get("image") or item.get("image_url")
         image_url = str(image).strip() if image else None
 
@@ -137,7 +162,7 @@ def pieces_from_gallery(gallery: dict[str, Any]) -> list[ArtPiece]:
                 medium=medium,
                 status=status,
                 size=size,
-                price=_parse_price(item.get("price")),
+                price=price,
                 image_url=image_url,
                 for_sale=for_sale,
                 buy_url=buy,

@@ -21,8 +21,10 @@ sells — each is independent, wire them in any order:
 
 1. **Read the live gallery — already wired.** `agent.fetch_gallery()` fetches
  `https://codycarlson.art/api/gallery` and returns the real JSON catalog.
- `agent.fetch_site()` keeps the same snapshot interface while summarizing that
- API response. No HTML page or `js/config.js` scraping is used.
+ `agent.fetch_site()` reads the **public page a buyer actually loads** and
+ grounds it with that catalog: because the site is a client-rendered SPA, the
+ gallery JSON is attached as `snapshot.gallery_data` (and merged into prices /
+ images) so the diagnosis judges the real page, not the admin API.
 
 2. **Mark what's for sale.** A piece becomes sellable when it has
    `for_sale=True`, a `price`, and a `buy_url`. Set these on the `ArtPiece`
@@ -54,8 +56,9 @@ plumbing is at different stages. This table is the source of truth:
 | LLM-completed methods (briefs, buyers, pricing, board) | ✅ Implemented | Filled in by nooa at runtime |
 | Deterministic state helpers | ✅ Implemented | `agents/logic.py`, unit-tested |
 | Local state persistence | ✅ Implemented | JSON on disk (`agents/state.py`) |
-| Live gallery reading | ✅ Implemented | `agents/site.py` fetches `/api/gallery`; `agent.fetch_gallery()` returns the JSON |
+| Live gallery reading | ✅ Implemented | `agent.fetch_gallery()` returns `/api/gallery` JSON; `agent.fetch_site()` reads the public page and grounds it with that catalog |
 | For-sale / checkout model | ✅ Implemented | `for_sale` + `buy_url` on `ArtPiece`; `get_sellable()` |
+| Per-piece metadata / SEO | ✅ Implemented | `agents/seo.py`; `build_piece_seo()`, `export_seo_file()`; LLM enriches copy + AI-search research |
 | Payments (checkout links) | 🔌 Bring your own | Per-piece Stripe/Gumroad link in `buy_url` (see **Hook it up**) |
 | Buyer leads + contact report | ✅ Implemented | `BuyerLead` carries all contact fields; `find_buyer_leads_for_piece()` + `buyer_contacts_report()` / `export_buyer_contacts()` |
 | Real buyer search (named ND leads) | 🔌 Needs API key | `ART_MANAGER_SEARCH_API_KEY`; without it buyers stay AI-guessed (`agent.has_buyer_search`) |
@@ -81,12 +84,13 @@ the long-term home is a follow-up.
 
 These IDs are the defaults; override them via `ART_MANAGER_DRIVE_*` env vars.
 
-## Current finished pieces
+## Inventory
 
-| ID | Title | Medium | Size | Notes |
-|----|-------|--------|------|-------|
-| `summer-walleye` | Summer Walleye | Box elder wood carving | 27" | Outdoor UV + water protected |
-| `buffalo` | Buffalo | Acrylic on canvas | 36×24 | Gaming-machine inspired |
+Inventory comes entirely from the **live site** — `sync_from_gallery()` pulls
+the real catalog from `/api/gallery` on every run. There are no hardcoded or
+seeded pieces. (A piece that only exists locally, e.g. a carving not in the
+paintings API, can still be added via `agent.add_piece(...)` and is preserved
+across syncs.)
 
 ## Project layout
 
@@ -94,7 +98,7 @@ These IDs are the defaults; override them via `ART_MANAGER_DRIVE_*` env vars.
 agents/
   models.py       # pydantic data models (framework-agnostic)
   logic.py        # pure deterministic helpers (no LLM / no nooa)
-  contacts.py     # render buyer leads into a contact-rich report
+  seo.py          # deterministic per-piece meta tags + schema.org JSON-LD
   config.py       # env-driven configuration
   state.py        # local JSON state persistence
   art_manager.py  # the nooa Agent subclass (LLM-completed methods)
@@ -107,10 +111,27 @@ imported and tested without the agent runtime or an API key. Importing the
 `agents` package is side-effect-free — the nooa agent and its LLM client are
 built lazily the first time `ArtManagerAgent` is accessed.
 
-## Setup
+## Quick start (Ubuntu / one command)
+
+```bash
+# 1. Paste your key in (prompts hidden; not saved to shell history):
+read -rsp "Anthropic API key: " KEY && printf 'ANTHROPIC_API_KEY=%s\n' "$KEY" > .env && unset KEY; echo
+
+# 2. Run everything:
+./run.sh
+```
+
+`run.sh` creates a local `.venv`, installs dependencies on first run, and then
+runs the daily workflow. Later runs reuse the venv and start immediately. It
+needs **Python 3.12 or 3.13** on the machine (see below) and errors with an
+install hint if it can't find one. Other modes: `./run.sh --tests` (test suite),
+`./run.sh --setup` (install deps only).
+
+## Setup (manual)
 
 Requires **Python 3.12 or 3.13** (the [`nooa`](https://github.com/NVIDIA-NeMo/labs-OO-Agents)
-runtime does not support 3.11 or 3.14+).
+runtime does not support 3.11 or 3.14+). On Ubuntu 22.04 or older, install it
+with `sudo apt install python3.12 python3.12-venv`.
 
 ```bash
 pip install -r requirements.txt

@@ -25,13 +25,14 @@ from typing import Any
 
 from nooa import Agent
 
-from . import contacts, logic, site
+from . import logic, seo, site
 from .config import Config, load_config
 from .models import (
     AgentState,
     ArtPiece,
     BuyerLead,
     ContentItem,
+    PieceSEO,
     ResearchInsight,
     SalesPipeline,
     SiteChange,
@@ -166,6 +167,9 @@ def _build_agent_class() -> type:
             preserved. Catalog fields from the site win; local notes and
             outdoor_ready are kept when already set.
 
+            Available pieces with a price get a shareable ``?buy=<id>`` checkout
+            deep link when no Stripe Payment Link is set on the site.
+
             Returns a small summary the daily runner / LLM can log.
             """
             gallery = self.fetch_gallery()
@@ -178,7 +182,7 @@ def _build_agent_class() -> type:
                     "total": len(self.pieces),
                 }
 
-            live = logic.pieces_from_gallery(gallery)
+            live = logic.pieces_from_gallery(gallery, site_url=self.site_url)
             before = {p.id for p in self.pieces}
             self.pieces = logic.merge_gallery_into_pieces(self.pieces, live)
             after_ids = {p.id for p in self.pieces}
@@ -213,32 +217,29 @@ def _build_agent_class() -> type:
             """Update a piece's status. Raises ValueError on an unknown status."""
             return logic.set_status(self.pieces, piece_id, status)
 
-        # === Buyer contacts (deterministic rendering) ===
-        @property
-        def has_buyer_search(self) -> bool:
-            """Whether a real buyer-search/enrichment key is configured."""
-            return bool(self.search_api_key)
+        # === SEO / metadata (deterministic baseline) ===
+        def build_piece_seo(self, piece_id: str) -> PieceSEO | None:
+            """Deterministic meta tags + schema.org JSON-LD for one piece.
 
-        def buyer_contacts_report(
-            self, piece_id: str, leads: list[BuyerLead]
-        ) -> str:
-            """Render structured buyer leads into a contact-rich report.
-
-            Contact details (email/phone/website/address) are always shown, and
-            leads still missing contact info are flagged for follow-up.
+            Always available (no LLM). ``write_piece_metadata`` can enrich the
+            human-facing copy on top of this.
             """
             piece = self.get_piece(piece_id)
-            return contacts.contacts_report(piece.title if piece else piece_id, leads)
+            if piece is None:
+                return None
+            return seo.piece_metadata(piece, self.site_url)
 
-        def export_buyer_contacts(
-            self, piece_id: str, leads: list[BuyerLead], path: str | None = None
-        ) -> str:
-            """Write the buyer contacts report for a piece to ``path``."""
+        def export_seo_file(self, path: str | None = None) -> str:
+            """Write a Markdown metadata/SEO document for every piece to ``path``.
+
+            Returns the path written. This is the "hand me a file" output: each
+            piece gets a ready-to-paste ``<head>`` snippet (meta tags + JSON-LD).
+            """
             from pathlib import Path
 
-            target = path or f"buyers_{piece_id}.md"
+            target = path or "piece_seo.md"
             Path(target).write_text(
-                self.buyer_contacts_report(piece_id, leads), encoding="utf-8"
+                seo.metadata_document(self.pieces, self.site_url), encoding="utf-8"
             )
             return target
 
@@ -270,31 +271,6 @@ def _build_agent_class() -> type:
 
         def load(self, path: str | None = None) -> None:
             self.apply_state(load_state(path or self.state_path))
-
-        def seed_known_pieces(self) -> None:
-            """Load the two finished pieces we already have (local inventory)."""
-            self.add_piece(
-                ArtPiece(
-                    id="summer-walleye",
-                    title="Summer Walleye",
-                    medium="Box elder wood carving",
-                    status="finished",
-                    size="27 inch",
-                    outdoor_ready=True,
-                    notes="Full outdoor UV and water protective coats (3), wet sanded. Strong ND fishing culture piece.",
-                )
-            )
-            self.add_piece(
-                ArtPiece(
-                    id="buffalo",
-                    title="Buffalo",
-                    medium="Acrylic on canvas",
-                    status="finished",
-                    size="36x24",
-                    outdoor_ready=False,
-                    notes="Inspired by gaming machines / Great American Buffalo. Bold graphic portrait with yellow border.",
-                )
-            )
 
         # === Core business methods (LLM-completed) ===
         async def daily_command_board(self) -> str:
@@ -336,6 +312,36 @@ def _build_agent_class() -> type:
             """
             Write a clean sales brief for a finished piece usable for listings,
             DMs, or outreach. Keep it human and specific to the actual piece.
+            Include the buy link when the piece is sellable.
+            """
+            ...
+
+        # === SEO / AI-search (LLM-enriched) ===
+        async def write_piece_metadata(self, piece_id: str) -> PieceSEO:
+            """
+            Write compelling SEO metadata for one piece, grounded in the real
+            ArtPiece. Start from ``self.build_piece_seo(piece_id)`` as the
+            baseline (correct title tag, canonical URL, and schema.org JSON-LD)
+            and improve the human-facing copy:
+            - meta_description: <=155 chars, specific, buyer-intent, mentions the
+              medium and North Dakota / Minot when natural. No keyword stuffing.
+            - keywords: the realistic terms a buyer would actually search.
+            - og_title / og_description: share-friendly.
+            - alt_text: describes the image for accessibility + image search.
+            Keep piece_id, canonical_url, and json_ld from the baseline. Return
+            the completed PieceSEO.
+            """
+            ...
+
+        async def research_ai_search_visibility(self) -> list[ResearchInsight]:
+            """
+            Research how this art business can show up in AI answer engines
+            (ChatGPT, Claude, Perplexity, Google AI Overviews) and modern search.
+            Focus on concrete, doable moves: schema.org/JSON-LD structured data,
+            a clear entity (artist name, location, mediums), consistent NAP,
+            image alt text, being cited on pages AI crawls, and llms.txt.
+            Return 5–8 concrete insights with sources and recommendations, and
+            store them on self.last_research.
             """
             ...
 
@@ -382,7 +388,8 @@ def _build_agent_class() -> type:
             """
             Write a short, specific outreach message (email or DM) for one ND target
             about one specific piece. Personal, not spammy. Reference real local
-            context when possible. Keep it under 120 words.
+            context when possible. Keep it under 120 words. Include the buy link
+            when available.
             """
             ...
 
@@ -399,11 +406,18 @@ def _build_agent_class() -> type:
 
         async def analyze_current_site(self, snapshot: SiteSnapshot) -> str:
             """
-            Diagnose the REAL website using the provided `snapshot` — the actual
-            page title, text, images, prices, contact info, links, and any
-            config/data script the agent just read. Do not invent content; work
-            only from what the snapshot shows (if snapshot.ok is False, say the
-            site could not be read and stop).
+            Diagnose the REAL public website using the provided `snapshot` — the
+            actual page title, text, images, prices, contact info, and links the
+            agent just read from the page a buyer loads. Do not invent content;
+            work only from what the snapshot shows (if snapshot.ok is False, say
+            the site could not be read and stop).
+
+            IMPORTANT: the site is a client-rendered SPA, so its catalog is drawn
+            in by JavaScript and will NOT appear in the raw page text. The real
+            inventory the page renders is in `snapshot.gallery_data` (and merged
+            into `snapshot.prices` / `snapshot.images`). Judge products, prices,
+            and availability from `gallery_data` — do NOT report them as
+            "missing" just because they are absent from the visible page text.
 
             Judge it as a tool for SELLING art:
             - Is it clear what is for sale and at what price? Can a buyer actually
