@@ -21,8 +21,10 @@ sells — each is independent, wire them in any order:
 
 1. **Read the live gallery — already wired.** `agent.fetch_gallery()` fetches
  `https://codycarlson.art/api/gallery` and returns the real JSON catalog.
- `agent.fetch_site()` keeps the same snapshot interface while summarizing that
- API response. No HTML page or `js/config.js` scraping is used.
+ `agent.fetch_site()` reads the **public page a buyer actually loads** and
+ grounds it with that catalog: because the site is a client-rendered SPA, the
+ gallery JSON is attached as `snapshot.gallery_data` (and merged into prices /
+ images) so the diagnosis judges the real page, not the admin API.
 
 2. **Mark what's for sale.** A piece becomes sellable when it has
    `for_sale=True`, a `price`, and a `buy_url`. Set these on the `ArtPiece`
@@ -54,7 +56,7 @@ plumbing is at different stages. This table is the source of truth:
 | LLM-completed methods (briefs, buyers, pricing, board) | ✅ Implemented | Filled in by nooa at runtime |
 | Deterministic state helpers | ✅ Implemented | `agents/logic.py`, unit-tested |
 | Local state persistence | ✅ Implemented | JSON on disk (`agents/state.py`) |
-| Live gallery reading | ✅ Implemented | `agents/site.py` fetches `/api/gallery`; `agent.fetch_gallery()` returns the JSON |
+| Live gallery reading | ✅ Implemented | `agent.fetch_gallery()` returns `/api/gallery` JSON; `agent.fetch_site()` reads the public page and grounds it with that catalog |
 | For-sale / checkout model | ✅ Implemented | `for_sale` + `buy_url` on `ArtPiece`; `get_sellable()` |
 | Payments (checkout links) | 🔌 Bring your own | Per-piece Stripe/Gumroad link in `buy_url` (see **Hook it up**) |
 | Real buyer search (named ND leads) | 🔌 Needs API key | `ART_MANAGER_SEARCH_API_KEY`; without it buyers stay AI-guessed |
