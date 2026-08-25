@@ -8,7 +8,9 @@ unit-test. The agent delegates its non-judgment work here.
 
 from __future__ import annotations
 
-from .models import PIECE_STATUSES, ArtPiece
+from typing import Any
+
+from .models import PIECE_STATUSES, ArtPiece, PieceStatus
 
 
 def finished_unlisted(pieces: list[ArtPiece]) -> list[ArtPiece]:
@@ -69,3 +71,111 @@ def set_status(pieces: list[ArtPiece], piece_id: str, status: str) -> bool:
             p.status = status  # validated by the model (validate_assignment)
             return True
     return False
+
+
+def _parse_price(raw: Any) -> float | None:
+    if raw is None or raw == "":
+        return None
+    try:
+        return float(str(raw).replace(",", "").replace("$", "").strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _map_gallery_status(raw: Any) -> tuple[PieceStatus, bool]:
+    """Map site status string → (ArtPiece.status, for_sale)."""
+    s = str(raw or "available").strip().lower()
+    if s == "sold":
+        return "sold", False
+    if s == "reserved":
+        # Still listed inventory, but not currently buyable.
+        return "listed", False
+    # available / unknown → listed + for sale
+    return "listed", True
+
+
+def pieces_from_gallery(gallery: dict[str, Any]) -> list[ArtPiece]:
+    """Convert the live ``/api/gallery`` JSON into ArtPiece records.
+
+    Only the ``paintings`` array is treated as inventory. Portfolio galleries
+    (featured / studio / stones) are display-only and are not turned into pieces.
+    Malformed entries are skipped rather than raising.
+    """
+    if not isinstance(gallery, dict) or gallery.get("ok") is False:
+        return []
+
+    raw_paintings = gallery.get("paintings", [])
+    if not isinstance(raw_paintings, list):
+        return []
+
+    out: list[ArtPiece] = []
+    for item in raw_paintings:
+        if not isinstance(item, dict):
+            continue
+        pid = str(item.get("id") or "").strip()
+        title = str(item.get("title") or "").strip()
+        if not pid or not title:
+            continue
+
+        status, for_sale = _map_gallery_status(item.get("status"))
+        buy = item.get("buyUrl") or item.get("buy_url") or None
+        if isinstance(buy, str):
+            buy = buy.strip() or None
+        else:
+            buy = None
+
+        image = item.get("url") or item.get("image") or item.get("image_url")
+        image_url = str(image).strip() if image else None
+
+        medium = str(item.get("medium") or "Painting").strip() or "Painting"
+        size = str(item.get("size") or "").strip()
+
+        out.append(
+            ArtPiece(
+                id=pid,
+                title=title,
+                medium=medium,
+                status=status,
+                size=size,
+                price=_parse_price(item.get("price")),
+                image_url=image_url,
+                for_sale=for_sale,
+                buy_url=buy,
+                notes="Synced from live gallery API",
+            )
+        )
+    return out
+
+
+def merge_gallery_into_pieces(
+    existing: list[ArtPiece],
+    live: list[ArtPiece],
+) -> list[ArtPiece]:
+    """Upsert live gallery pieces into local inventory.
+
+    - Live catalog fields win (title, price, status, for_sale, buy_url, image).
+    - Local-only pieces (e.g. carvings not in the paintings API) are kept.
+    - Local notes and outdoor_ready are preserved when already set.
+    """
+    by_id: dict[str, ArtPiece] = {p.id: p for p in existing}
+
+    for lp in live:
+        if lp.id in by_id:
+            old = by_id[lp.id]
+            by_id[lp.id] = lp.model_copy(
+                update={
+                    # Keep richer local annotations when present.
+                    "notes": old.notes if old.notes and old.notes != "Synced from live gallery API" else lp.notes,
+                    "outdoor_ready": old.outdoor_ready or lp.outdoor_ready,
+                    # Prefer a more specific local medium over the generic default.
+                    "medium": (
+                        old.medium
+                        if old.medium and old.medium != "Painting" and lp.medium == "Painting"
+                        else lp.medium
+                    ),
+                }
+            )
+        else:
+            by_id[lp.id] = lp
+
+    return list(by_id.values())

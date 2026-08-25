@@ -35,6 +35,8 @@ class ArtPiece(BaseModel):
     price: float | None = None
     notes: str = ""
     outdoor_ready: bool = False
+    # Optional catalog image (from live gallery API).
+    image_url: str | None = None
     # Selling: whether this piece is actively offered for sale, and the direct
     # checkout link (e.g. a Stripe Payment Link or Gumroad URL) buyers click to
     # pay. A portfolio-only piece has for_sale=False and no buy_url.

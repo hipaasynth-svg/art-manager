@@ -155,6 +155,45 @@ def _build_agent_class() -> type:
             self.last_site_snapshot = snap
             return snap
 
+        def sync_from_gallery(self) -> dict[str, Any]:
+            """Pull live ``/api/gallery`` paintings into ``self.pieces``.
+
+            Local-only inventory (e.g. carvings not in the paintings API) is
+            preserved. Catalog fields from the site win; local notes and
+            outdoor_ready are kept when already set.
+
+            Returns a small summary the daily runner / LLM can log.
+            """
+            gallery = self.fetch_gallery()
+            if isinstance(gallery, dict) and gallery.get("ok") is False:
+                return {
+                    "ok": False,
+                    "error": gallery.get("error", "gallery fetch failed"),
+                    "added": 0,
+                    "updated": 0,
+                    "total": len(self.pieces),
+                }
+
+            live = logic.pieces_from_gallery(gallery)
+            before = {p.id for p in self.pieces}
+            self.pieces = logic.merge_gallery_into_pieces(self.pieces, live)
+            after_ids = {p.id for p in self.pieces}
+            live_ids = {p.id for p in live}
+
+            # Also keep a site snapshot so analyze_current_site stays grounded.
+            snap = site.fetch_site(self.site_url)
+            self.last_site_snapshot = snap
+
+            return {
+                "ok": True,
+                "live_paintings": len(live),
+                "added": len(live_ids - before),
+                "updated": len(live_ids & before),
+                "total": len(after_ids),
+                "for_sale": len(self.get_for_sale()),
+                "sellable": len(self.get_sellable()),
+            }
+
         def revenue_gap(self) -> float:
             return logic.revenue_gap(
                 self.monthly_revenue_goal, self.pipeline.revenue_this_month
@@ -200,7 +239,7 @@ def _build_agent_class() -> type:
             self.apply_state(load_state(path or self.state_path))
 
         def seed_known_pieces(self) -> None:
-            """Load the two finished pieces we already have."""
+            """Load the two finished pieces we already have (local inventory)."""
             self.add_piece(
                 ArtPiece(
                     id="summer-walleye",
