@@ -65,6 +65,7 @@ plumbing is at different stages. This table is the source of truth:
 | Google Drive persistence | 🚧 Planned | Folder IDs are configured; no Drive client is wired up yet |
 | 3-day printout automation | 🚧 Planned | No scheduler exists in this repo yet |
 | Site changes via GitHub PR | 🚧 Planned | The agent produces PR instructions; it does not open PRs itself |
+| Content generation agent | ✅ Implemented | Separate `ContentAgent` (`agents/content_agent.py`) — TikTok/IG/FB captions, short scripts, visual briefs on a schedule; actual posting needs a connector |
 
 State currently persists to a local JSON file (see **State** below). Drive as
 the long-term home is a follow-up.
@@ -100,7 +101,9 @@ agents/
   seo.py          # deterministic per-piece meta tags + schema.org JSON-LD
   config.py       # env-driven configuration
   state.py        # local JSON state persistence
+  content.py      # deterministic social scaffolding (hashtags, schedule, render)
   art_manager.py  # the nooa Agent subclass (LLM-completed methods)
+  content_agent.py# separate nooa agent for TikTok/IG/FB content generation
   run_daily.py    # example runner
 tests/            # unit tests for models / logic / config / state
 ```
