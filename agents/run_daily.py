@@ -44,40 +44,57 @@ async def _step(title: str, coro_factory: Callable[[], Awaitable[T]]) -> T | Non
 async def main() -> None:
     agent = ArtManagerAgent()
 
-    # Restore prior state; seed the known pieces only if we're starting fresh.
+    # Restore prior state; seed the known local pieces only if we're starting fresh.
     agent.load()
     if not agent.pieces:
         agent.seed_known_pieces()
 
-    print("=== Seeded pieces ===")
+    # Live gallery is source of truth for paintings inventory.
+    print(f"\n=== Syncing live gallery: {agent.site_url} ===")
+    sync = agent.sync_from_gallery()
+    if sync.get("ok"):
+        print(
+            f"  ok — live={sync['live_paintings']}, added={sync['added']}, "
+            f"updated={sync['updated']}, total={sync['total']}, "
+            f"for_sale={sync['for_sale']}, sellable={sync['sellable']}"
+        )
+    else:
+        print(f"  could not sync gallery: {sync.get('error')}")
+
+    print("=== Inventory ===")
     for p in agent.pieces:
         flag = "  [FOR SALE]" if p.for_sale else ""
-        print(f"  • {p.title} ({p.medium}) — {p.status} — {p.size}{flag}")
+        price = f" ${p.price}" if p.price is not None else ""
+        print(f"  • {p.title} ({p.medium}) — {p.status} — {p.size}{price}{flag}")
 
-    # Read the live site first so the analysis is grounded in what's really there.
-    print(f"\n=== Reading live site: {agent.site_url} ===")
-    snap = agent.fetch_site()
-    if snap.ok:
-        print(
-            f"  ok — title={snap.title!r}, {len(snap.images)} images, "
-            f"prices={snap.prices or 'none found'}, "
-            f"emails={snap.emails or 'none found'}, "
-            f"data scripts={list(snap.data_scripts) or 'none'}"
+    snap = agent.last_site_snapshot
+    if snap and snap.ok:
+        await _step(
+            "Site diagnosis (grounded in the live page)",
+            lambda: agent.analyze_current_site(snap),
         )
-        await _step("Site diagnosis (grounded in the live page)",
-                    lambda: agent.analyze_current_site(snap))
-    else:
-        print(f"  could not read site: {snap.error}")
+    elif snap:
+        print(f"  site snapshot not ok: {snap.error}")
 
     await _step("Daily command board", agent.daily_command_board)
+
+    # Prefer a live for-sale piece when present; fall back to known local ids.
+    for_sale = agent.get_for_sale()
+    focus_ids = [p.id for p in for_sale[:2]] or ["summer-walleye", "buffalo"]
+    for pid in focus_ids:
+        piece = agent.get_piece(pid)
+        label = piece.title if piece else pid
+        await _step(
+            f"Buyers for {label}",
+            lambda pid=pid: agent.find_buyers_for_piece(pid),
+        )
+
+    brief_id = focus_ids[0]
+    brief_piece = agent.get_piece(brief_id)
+    brief_label = brief_piece.title if brief_piece else brief_id
     await _step(
-        "Buyers for Summer Walleye",
-        lambda: agent.find_buyers_for_piece("summer-walleye"),
-    )
-    await _step("Buyers for Buffalo", lambda: agent.find_buyers_for_piece("buffalo"))
-    await _step(
-        "Sales brief: Summer Walleye",
-        lambda: agent.create_sales_brief("summer-walleye"),
+        f"Sales brief: {brief_label}",
+        lambda: agent.create_sales_brief(brief_id),
     )
 
     agent.save()

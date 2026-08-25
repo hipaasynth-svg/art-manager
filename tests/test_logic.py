@@ -79,3 +79,112 @@ def test_set_status_rejects_unknown_status():
         logic.set_status(pieces, "a", "bogus")
     # Unchanged after the failed transition.
     assert pieces[0].status == "concept"
+
+
+def test_pieces_from_gallery_maps_paintings():
+    gallery = {
+        "paintings": [
+            {
+                "id": "p_1",
+                "title": "Great American Buffalo",
+                "size": "16x24",
+                "price": "230.40",
+                "buyUrl": "",
+                "status": "available",
+                "url": "https://example.com/buffalo.jpg",
+            },
+            {
+                "id": "p_2",
+                "title": "Sold Work",
+                "size": "10x10",
+                "price": "100",
+                "buyUrl": "https://buy.example/x",
+                "status": "sold",
+                "url": "https://example.com/sold.jpg",
+            },
+            {
+                "id": "p_3",
+                "title": "Reserved",
+                "price": "50",
+                "status": "reserved",
+            },
+            {"title": "missing id"},  # skipped
+        ],
+        "galleries": {"featured": ["https://example.com/f.jpg"]},
+    }
+    pieces = logic.pieces_from_gallery(gallery)
+    assert len(pieces) == 3
+
+    by_id = {p.id: p for p in pieces}
+    assert by_id["p_1"].status == "listed"
+    assert by_id["p_1"].for_sale is True
+    assert by_id["p_1"].price == 230.40
+    assert by_id["p_1"].buy_url is None
+    assert by_id["p_1"].image_url == "https://example.com/buffalo.jpg"
+    assert by_id["p_1"].medium == "Painting"
+
+    assert by_id["p_2"].status == "sold"
+    assert by_id["p_2"].for_sale is False
+    assert by_id["p_2"].buy_url == "https://buy.example/x"
+
+    assert by_id["p_3"].status == "listed"
+    assert by_id["p_3"].for_sale is False
+
+
+def test_pieces_from_gallery_handles_error_payload():
+    assert logic.pieces_from_gallery({"ok": False, "error": "boom"}) == []
+    assert logic.pieces_from_gallery({}) == []
+
+
+def test_merge_gallery_keeps_local_only_and_preserves_notes():
+    local = [
+        ArtPiece(
+            id="summer-walleye",
+            title="Summer Walleye",
+            medium="Box elder wood carving",
+            status="finished",
+            outdoor_ready=True,
+            notes="Local carving notes",
+        ),
+        ArtPiece(
+            id="p_1",
+            title="Old Title",
+            medium="Acrylic on canvas",
+            status="finished",
+            notes="Hand notes about this painting",
+            outdoor_ready=False,
+        ),
+    ]
+    live = [
+        ArtPiece(
+            id="p_1",
+            title="Great American Buffalo",
+            medium="Painting",
+            status="listed",
+            size="16x24",
+            price=230.40,
+            for_sale=True,
+            notes="Synced from live gallery API",
+            image_url="https://example.com/buffalo.jpg",
+        ),
+        ArtPiece(
+            id="p_new",
+            title="New Piece",
+            medium="Painting",
+            status="listed",
+            price=100.0,
+            for_sale=True,
+            notes="Synced from live gallery API",
+        ),
+    ]
+    merged = logic.merge_gallery_into_pieces(local, live)
+    by_id = {p.id: p for p in merged}
+
+    assert set(by_id) == {"summer-walleye", "p_1", "p_new"}
+    assert by_id["summer-walleye"].outdoor_ready is True
+    assert by_id["p_1"].title == "Great American Buffalo"
+    assert by_id["p_1"].price == 230.40
+    assert by_id["p_1"].for_sale is True
+    assert by_id["p_1"].notes == "Hand notes about this painting"
+    assert by_id["p_1"].medium == "Acrylic on canvas"  # local more specific
+    assert by_id["p_new"].title == "New Piece"
