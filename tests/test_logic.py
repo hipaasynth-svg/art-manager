@@ -119,7 +119,8 @@ def test_pieces_from_gallery_maps_paintings():
     assert by_id["p_1"].status == "listed"
     assert by_id["p_1"].for_sale is True
     assert by_id["p_1"].price == 230.40
-    assert by_id["p_1"].buy_url is None
+    # Priced + available with no explicit Payment Link → shareable ?buy= deep link.
+    assert by_id["p_1"].buy_url == "https://www.codycarlson.art/?buy=p_1"
     assert by_id["p_1"].image_url == "https://example.com/buffalo.jpg"
     assert by_id["p_1"].medium == "Painting"
 
@@ -129,6 +130,29 @@ def test_pieces_from_gallery_maps_paintings():
 
     assert by_id["p_3"].status == "listed"
     assert by_id["p_3"].for_sale is False
+
+
+def test_pieces_from_gallery_buy_url_deep_link_and_explicit_wins():
+    gallery = {
+        "paintings": [
+            {"id": "auto", "title": "Auto", "price": "75", "status": "available"},
+            {
+                "id": "explicit",
+                "title": "Explicit",
+                "price": "75",
+                "status": "available",
+                "buyUrl": "https://buy.stripe.com/abc",
+            },
+            {"id": "free", "title": "No Price", "status": "available"},
+        ]
+    }
+    by_id = {p.id: p for p in logic.pieces_from_gallery(gallery)}
+    # Priced + available with no link → generated deep link.
+    assert by_id["auto"].buy_url == "https://www.codycarlson.art/?buy=auto"
+    # An explicit admin-set Payment Link always wins.
+    assert by_id["explicit"].buy_url == "https://buy.stripe.com/abc"
+    # No price → no auto link (can't check out).
+    assert by_id["free"].buy_url is None
 
 
 def test_pieces_from_gallery_handles_error_payload():
