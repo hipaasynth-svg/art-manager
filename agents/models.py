@@ -55,6 +55,28 @@ class ContentItem(BaseModel):
     scheduled_for: str | None = None
 
 
+Platform = Literal["tiktok", "instagram", "facebook"]
+ContentFormat = Literal["post", "reel", "short", "story"]
+
+
+class SocialPost(BaseModel):
+    """One piece of social content for TikTok / Instagram / Facebook."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
+    platform: Platform
+    format: ContentFormat
+    related_piece_id: str | None = None
+    hook: str = ""  # the scroll-stopping first line / first 2 seconds
+    caption: str = ""
+    hashtags: list[str] = Field(default_factory=list)
+    visual_brief: str = ""  # what to shoot / show (the "visuals")
+    script: str = ""  # shot-by-shot script for reels / shorts
+    cta: str = ""
+    status: Literal["idea", "drafted", "scheduled", "posted"] = "idea"
+    scheduled_for: str = ""  # ISO date, when scheduled
+
+
 class SalesPipeline(BaseModel):
     leads: list[str] = Field(default_factory=list)
     active_conversations: list[str] = Field(default_factory=list)
