@@ -30,6 +30,7 @@ from .config import Config, load_config
 from .models import (
     AgentState,
     ArtPiece,
+    BuyerLead,
     ContentItem,
     PieceSEO,
     ResearchInsight,
@@ -116,6 +117,9 @@ def _build_agent_class() -> type:
 
         # Local state persistence
         state_path: str = _CONFIG.state_path
+
+        # Buyer search / enrichment key (empty = AI-guessed leads only).
+        search_api_key: str = _CONFIG.search_api_key
 
         def __init__(self, **kwargs) -> None:
             # Pass through llm / storage / context etc. to nooa's Agent, then
@@ -355,6 +359,28 @@ def _build_agent_class() -> type:
             - One clear next outreach action
 
             Be specific and local to Minot / North Dakota. No generic advice.
+            """
+            ...
+
+        async def find_buyer_leads_for_piece(self, piece_id: str) -> list[BuyerLead]:
+            """
+            Find high-intent North Dakota buyers for one piece as STRUCTURED
+            leads, each carrying every contact detail you can find — this is the
+            report that must not drop contact info (issue #7).
+
+            For each of 3–6 leads populate BuyerLead: name, category, location,
+            why_fit, and as much of website / email / phone / address /
+            contact_name as is findable, plus source, next_action, confidence.
+
+            Use a real data source when one is configured: ``self.has_buyer_search``
+            tells you whether a search/enrichment key is set (Google Places,
+            Brave, SerpAPI, or Apollo). If MCP tools are available, use them to
+            enrich company contact info. When no source is configured, still
+            return named, plausible local targets but set confidence honestly and
+            put the lookup step in next_action rather than inventing emails/phones.
+
+            Return the list. Render it for humans with
+            ``self.buyer_contacts_report(piece_id, leads)``.
             """
             ...
 

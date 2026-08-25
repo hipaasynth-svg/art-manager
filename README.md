@@ -60,7 +60,8 @@ plumbing is at different stages. This table is the source of truth:
 | For-sale / checkout model | ✅ Implemented | `for_sale` + `buy_url` on `ArtPiece`; `get_sellable()` |
 | Per-piece metadata / SEO | ✅ Implemented | `agents/seo.py`; `build_piece_seo()`, `export_seo_file()`; LLM enriches copy + AI-search research |
 | Payments (checkout links) | 🔌 Bring your own | Per-piece Stripe/Gumroad link in `buy_url` (see **Hook it up**) |
-| Real buyer search (named ND leads) | 🔌 Needs API key | `ART_MANAGER_SEARCH_API_KEY`; without it buyers stay AI-guessed |
+| Buyer leads + contact report | ✅ Implemented | `BuyerLead` carries all contact fields; `find_buyer_leads_for_piece()` + `buyer_contacts_report()` / `export_buyer_contacts()` |
+| Real buyer search (named ND leads) | 🔌 Needs API key | `ART_MANAGER_SEARCH_API_KEY`; without it buyers stay AI-guessed (`agent.has_buyer_search`) |
 | Send outreach email | 🔌 Needs Gmail | Agent drafts; connect Gmail to send |
 | Google Drive persistence | 🚧 Planned | Folder IDs are configured; no Drive client is wired up yet |
 | 3-day printout automation | 🚧 Planned | No scheduler exists in this repo yet |
