@@ -82,16 +82,50 @@ def test_fetch_gallery_returns_api_json(monkeypatch):
     }
 
 
-def test_fetch_site_uses_gallery_endpoint(monkeypatch):
-    seen = []
-    monkeypatch.setattr(
-        "agents.site._get",
-        lambda url, timeout: seen.append(url) or '{"paintings":[{"price":"230.40"}]}',
+def test_fetch_site_reads_public_page_and_grounds_with_gallery(monkeypatch):
+    # The public page a buyer loads (a client-rendered SPA shell) + the gallery
+    # API the page uses to fill in its catalog.
+    page_html = (
+        "<!doctype html><html><head><title>Cody Carlson</title>"
+        '<meta name="description" content="North Dakota art.">'
+        "</head><body><h1>Gallery</h1>"
+        '<a href="mailto:cody@codycarlson.art">Email</a></body></html>'
     )
+    seen = []
+
+    def fake_get(url, timeout):
+        seen.append(url)
+        if url.endswith("/api/gallery"):
+            return '{"paintings":[{"price":"230.40"}],"galleries":{"featured":["https://example.com/f.jpg"]}}'
+        return page_html
+
+    monkeypatch.setattr("agents.site._get", fake_get)
 
     snapshot = fetch_site("https://codycarlson.art")
 
-    assert seen == ["https://codycarlson.art/api/gallery"]
+    # It reads the REAL public page, not just the admin API.
+    assert "https://codycarlson.art" in seen
+    assert any(u.endswith("/api/gallery") for u in seen)
     assert snapshot.ok is True
-    assert snapshot.gallery_data == {"paintings": [{"price": "230.40"}]}
-    assert snapshot.prices == ["$230.40"]
+    assert snapshot.url == "https://codycarlson.art"
+    assert snapshot.title == "Cody Carlson"
+    assert "cody@codycarlson.art" in snapshot.emails
+    # Catalog the SPA renders client-side is attached and merged for grounding.
+    assert snapshot.gallery_data["paintings"] == [{"price": "230.40"}]
+    assert "$230.40" in snapshot.prices
+    assert any(i.src == "https://example.com/f.jpg" for i in snapshot.images)
+
+
+def test_fetch_site_ok_false_when_public_page_unreadable(monkeypatch):
+    def boom(url, timeout):
+        if url.endswith("/api/gallery"):
+            return '{"paintings":[]}'
+        raise OSError("connection refused")
+
+    monkeypatch.setattr("agents.site._get", boom)
+
+    snapshot = fetch_site("https://codycarlson.art")
+    # Public page couldn't be read → not ok, but gallery data still attached.
+    assert snapshot.ok is False
+    assert "connection refused" in snapshot.error
+    assert snapshot.gallery_data == {"paintings": []}

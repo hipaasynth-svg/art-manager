@@ -150,36 +150,60 @@ def fetch_site(
     timeout: float = 15.0,
     fetch_data_scripts: bool = True,
 ) -> SiteSnapshot:
-    """Fetch the structured gallery API and summarize it as a SiteSnapshot.
+    """Read the REAL public page a buyer sees, grounded with catalog data.
 
-    ``fetch_data_scripts`` is retained as a no-op compatibility argument for
-    callers of the previous HTML reader. No HTML page or data script is fetched.
+    Diagnosis must reflect the public website, not the admin ``/api/gallery``
+    endpoint: summarizing the API as if it were the page made the agent report
+    problems ("no prices", "no products") that a visitor never actually sees.
+
+    So this fetches the public HTML at ``url`` and parses it (title, meta,
+    visible text, images, contact links, prices) exactly as a visitor loads it.
+    The site is a client-rendered SPA, so its catalog is filled in by JavaScript
+    the raw HTML doesn't contain — we therefore ALSO read the gallery API the
+    page itself uses and attach it as ``gallery_data`` (merging its prices and
+    images) so the diagnosis knows the inventory the page renders rather than
+    calling it missing.
+
+    ``fetch_data_scripts`` is retained as a no-op compatibility argument.
     """
     del fetch_data_scripts
+
+    # 1. The public page a buyer actually loads.
+    try:
+        snap = parse_site(_get(url, timeout), url)
+    except Exception as exc:  # noqa: BLE001 - reader must be resilient
+        snap = SiteSnapshot(
+            url=url,
+            fetched_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            ok=False,
+            error=f"{type(exc).__name__}: {exc}",
+        )
+
+    # 2. Ground it with the catalog the SPA renders client-side, so the
+    #    diagnosis doesn't flag inventory/prices the raw HTML can't show.
     gallery = fetch_gallery(url, timeout=timeout)
-    failed = gallery.get("ok") is False
-    paintings = gallery.get("paintings", [])
-    painting_count = len(paintings) if isinstance(paintings, list) else 0
-    prices = [
-        f"${painting['price']}"
-        for painting in paintings
-        if isinstance(painting, dict) and painting.get("price") not in (None, "")
-    ]
-    image_urls = [
-        image
-        for images in gallery.get("galleries", {}).values()
-        if isinstance(images, list)
-        for image in images
-        if isinstance(image, str)
-    ] if isinstance(gallery.get("galleries"), dict) else []
-    return SiteSnapshot(
-        url=f"{url.rstrip('/')}/api/gallery",
-        fetched_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        ok=not failed,
-        title="Cody Carlson Gallery",
-        text=f"Gallery API returned {painting_count} paintings.",
-        images=[SiteImage(src=image) for image in image_urls],
-        prices=_dedupe(prices),
-        gallery_data=gallery,
-        error=str(gallery.get("error", "")),
-    )
+    if isinstance(gallery, dict) and gallery.get("ok") is not False:
+        snap.gallery_data = gallery
+        paintings = gallery.get("paintings", [])
+        if isinstance(paintings, list):
+            snap.prices = _dedupe(
+                snap.prices
+                + [
+                    f"${p['price']}"
+                    for p in paintings
+                    if isinstance(p, dict) and p.get("price") not in (None, "")
+                ]
+            )
+        galleries = gallery.get("galleries", {})
+        if isinstance(galleries, dict):
+            catalog_images = [
+                SiteImage(src=img)
+                for images in galleries.values()
+                if isinstance(images, list)
+                for img in images
+                if isinstance(img, str)
+            ]
+            have = {i.src for i in snap.images}
+            snap.images = snap.images + [i for i in catalog_images if i.src not in have]
+
+    return snap

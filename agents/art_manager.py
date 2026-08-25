@@ -349,11 +349,18 @@ def _build_agent_class() -> type:
 
         async def analyze_current_site(self, snapshot: SiteSnapshot) -> str:
             """
-            Diagnose the REAL website using the provided `snapshot` — the actual
-            page title, text, images, prices, contact info, links, and any
-            config/data script the agent just read. Do not invent content; work
-            only from what the snapshot shows (if snapshot.ok is False, say the
-            site could not be read and stop).
+            Diagnose the REAL public website using the provided `snapshot` — the
+            actual page title, text, images, prices, contact info, and links the
+            agent just read from the page a buyer loads. Do not invent content;
+            work only from what the snapshot shows (if snapshot.ok is False, say
+            the site could not be read and stop).
+
+            IMPORTANT: the site is a client-rendered SPA, so its catalog is drawn
+            in by JavaScript and will NOT appear in the raw page text. The real
+            inventory the page renders is in `snapshot.gallery_data` (and merged
+            into `snapshot.prices` / `snapshot.images`). Judge products, prices,
+            and availability from `gallery_data` — do NOT report them as
+            "missing" just because they are absent from the visible page text.
 
             Judge it as a tool for SELLING art:
             - Is it clear what is for sale and at what price? Can a buyer actually
