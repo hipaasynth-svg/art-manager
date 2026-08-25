@@ -22,7 +22,7 @@ SAMPLE = """
   <a href="tel:701-555-0100">Call</a>
   <a href="/commissions">Commissions</a>
   <style>.x{color:red}</style>
-  <script>var hidden = "do not index $9999";</script>
+  <script>var hidden = "do not index $9999 scriptbot@hidden.example";</script>
 </body>
 </html>
 """
@@ -50,6 +50,8 @@ def test_images_absolutized_with_alt():
 def test_contact_and_price_extraction():
     s = _snap()
     assert "cody@codycarlson.art" in s.emails
+    # An address that only appears inside a <script> body is not a real contact.
+    assert "scriptbot@hidden.example" not in s.emails
     assert any("701" in p for p in s.phones)
     # Visible price captured; price inside <script> is NOT (script text skipped).
     assert "$1,200" in s.prices

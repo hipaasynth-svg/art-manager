@@ -105,10 +105,27 @@ imported and tested without the agent runtime or an API key. Importing the
 `agents` package is side-effect-free — the nooa agent and its LLM client are
 built lazily the first time `ArtManagerAgent` is accessed.
 
-## Setup
+## Quick start (Ubuntu / one command)
+
+```bash
+# 1. Paste your key in (prompts hidden; not saved to shell history):
+read -rsp "Anthropic API key: " KEY && printf 'ANTHROPIC_API_KEY=%s\n' "$KEY" > .env && unset KEY; echo
+
+# 2. Run everything:
+./run.sh
+```
+
+`run.sh` creates a local `.venv`, installs dependencies on first run, and then
+runs the daily workflow. Later runs reuse the venv and start immediately. It
+needs **Python 3.12 or 3.13** on the machine (see below) and errors with an
+install hint if it can't find one. Other modes: `./run.sh --tests` (test suite),
+`./run.sh --setup` (install deps only).
+
+## Setup (manual)
 
 Requires **Python 3.12 or 3.13** (the [`nooa`](https://github.com/NVIDIA-NeMo/labs-OO-Agents)
-runtime does not support 3.11 or 3.14+).
+runtime does not support 3.11 or 3.14+). On Ubuntu 22.04 or older, install it
+with `sudo apt install python3.12 python3.12-venv`.
 
 ```bash
 pip install -r requirements.txt
