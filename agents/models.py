@@ -109,6 +109,27 @@ class SiteSnapshot(BaseModel):
     error: str = ""
 
 
+class PieceSEO(BaseModel):
+    """Search-engine + AI-search metadata for one art piece.
+
+    The deterministic parts (``agents/seo.py``) are always available; the LLM
+    can enrich ``meta_description`` / ``keywords`` / ``og_*`` / ``alt_text`` with
+    compelling, human copy.
+    """
+
+    piece_id: str
+    title_tag: str = ""
+    meta_description: str = ""
+    keywords: list[str] = Field(default_factory=list)
+    canonical_url: str = ""
+    og_title: str = ""
+    og_description: str = ""
+    og_image: str = ""
+    alt_text: str = ""
+    # schema.org structured data (JSON-LD) a crawler / AI search can read.
+    json_ld: dict[str, Any] = Field(default_factory=dict)
+
+
 class AgentState(BaseModel):
     """Serializable snapshot of the agent's mutable business state."""
 

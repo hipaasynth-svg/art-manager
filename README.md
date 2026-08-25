@@ -56,6 +56,7 @@ plumbing is at different stages. This table is the source of truth:
 | Local state persistence | ✅ Implemented | JSON on disk (`agents/state.py`) |
 | Live gallery reading | ✅ Implemented | `agents/site.py` fetches `/api/gallery`; `agent.fetch_gallery()` returns the JSON |
 | For-sale / checkout model | ✅ Implemented | `for_sale` + `buy_url` on `ArtPiece`; `get_sellable()` |
+| Per-piece metadata / SEO | ✅ Implemented | `agents/seo.py`; `build_piece_seo()`, `export_seo_file()`; LLM enriches copy + AI-search research |
 | Payments (checkout links) | 🔌 Bring your own | Per-piece Stripe/Gumroad link in `buy_url` (see **Hook it up**) |
 | Real buyer search (named ND leads) | 🔌 Needs API key | `ART_MANAGER_SEARCH_API_KEY`; without it buyers stay AI-guessed |
 | Send outreach email | 🔌 Needs Gmail | Agent drafts; connect Gmail to send |
@@ -93,6 +94,7 @@ These IDs are the defaults; override them via `ART_MANAGER_DRIVE_*` env vars.
 agents/
   models.py       # pydantic data models (framework-agnostic)
   logic.py        # pure deterministic helpers (no LLM / no nooa)
+  seo.py          # deterministic per-piece meta tags + schema.org JSON-LD
   config.py       # env-driven configuration
   state.py        # local JSON state persistence
   art_manager.py  # the nooa Agent subclass (LLM-completed methods)

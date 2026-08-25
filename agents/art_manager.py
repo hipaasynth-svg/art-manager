@@ -25,12 +25,13 @@ from typing import Any
 
 from nooa import Agent
 
-from . import logic, site
+from . import logic, seo, site
 from .config import Config, load_config
 from .models import (
     AgentState,
     ArtPiece,
     ContentItem,
+    PieceSEO,
     ResearchInsight,
     SalesPipeline,
     SiteChange,
@@ -209,6 +210,32 @@ def _build_agent_class() -> type:
             """Update a piece's status. Raises ValueError on an unknown status."""
             return logic.set_status(self.pieces, piece_id, status)
 
+        # === SEO / metadata (deterministic baseline) ===
+        def build_piece_seo(self, piece_id: str) -> PieceSEO | None:
+            """Deterministic meta tags + schema.org JSON-LD for one piece.
+
+            Always available (no LLM). ``write_piece_metadata`` can enrich the
+            human-facing copy on top of this.
+            """
+            piece = self.get_piece(piece_id)
+            if piece is None:
+                return None
+            return seo.piece_metadata(piece, self.site_url)
+
+        def export_seo_file(self, path: str | None = None) -> str:
+            """Write a Markdown metadata/SEO document for every piece to ``path``.
+
+            Returns the path written. This is the "hand me a file" output: each
+            piece gets a ready-to-paste ``<head>`` snippet (meta tags + JSON-LD).
+            """
+            from pathlib import Path
+
+            target = path or "piece_seo.md"
+            Path(target).write_text(
+                seo.metadata_document(self.pieces, self.site_url), encoding="utf-8"
+            )
+            return target
+
         # === State persistence ===
         def to_state(self) -> AgentState:
             return AgentState(
@@ -303,6 +330,35 @@ def _build_agent_class() -> type:
             """
             Write a clean sales brief for a finished piece usable for listings,
             DMs, or outreach. Keep it human and specific to the actual piece.
+            """
+            ...
+
+        # === SEO / AI-search (LLM-enriched) ===
+        async def write_piece_metadata(self, piece_id: str) -> PieceSEO:
+            """
+            Write compelling SEO metadata for one piece, grounded in the real
+            ArtPiece. Start from ``self.build_piece_seo(piece_id)`` as the
+            baseline (correct title tag, canonical URL, and schema.org JSON-LD)
+            and improve the human-facing copy:
+            - meta_description: <=155 chars, specific, buyer-intent, mentions the
+              medium and North Dakota / Minot when natural. No keyword stuffing.
+            - keywords: the realistic terms a buyer would actually search.
+            - og_title / og_description: share-friendly.
+            - alt_text: describes the image for accessibility + image search.
+            Keep piece_id, canonical_url, and json_ld from the baseline. Return
+            the completed PieceSEO.
+            """
+            ...
+
+        async def research_ai_search_visibility(self) -> list[ResearchInsight]:
+            """
+            Research how this art business can show up in AI answer engines
+            (ChatGPT, Claude, Perplexity, Google AI Overviews) and modern search.
+            Focus on concrete, doable moves: schema.org/JSON-LD structured data,
+            a clear entity (artist name, location, mediums), consistent NAP,
+            image alt text, being cited on pages AI crawls, and llms.txt.
+            Return 5–8 concrete insights with sources and recommendations, and
+            store them on self.last_research.
             """
             ...
 
