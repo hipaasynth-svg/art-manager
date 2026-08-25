@@ -238,31 +238,6 @@ def _build_agent_class() -> type:
         def load(self, path: str | None = None) -> None:
             self.apply_state(load_state(path or self.state_path))
 
-        def seed_known_pieces(self) -> None:
-            """Load the two finished pieces we already have (local inventory)."""
-            self.add_piece(
-                ArtPiece(
-                    id="summer-walleye",
-                    title="Summer Walleye",
-                    medium="Box elder wood carving",
-                    status="finished",
-                    size="27 inch",
-                    outdoor_ready=True,
-                    notes="Full outdoor UV and water protective coats (3), wet sanded. Strong ND fishing culture piece.",
-                )
-            )
-            self.add_piece(
-                ArtPiece(
-                    id="buffalo",
-                    title="Buffalo",
-                    medium="Acrylic on canvas",
-                    status="finished",
-                    size="36x24",
-                    outdoor_ready=False,
-                    notes="Inspired by gaming machines / Great American Buffalo. Bold graphic portrait with yellow border.",
-                )
-            )
-
         # === Core business methods (LLM-completed) ===
         async def daily_command_board(self) -> str:
             """
