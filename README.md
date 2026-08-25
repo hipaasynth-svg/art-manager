@@ -82,12 +82,13 @@ the long-term home is a follow-up.
 
 These IDs are the defaults; override them via `ART_MANAGER_DRIVE_*` env vars.
 
-## Current finished pieces
+## Inventory
 
-| ID | Title | Medium | Size | Notes |
-|----|-------|--------|------|-------|
-| `summer-walleye` | Summer Walleye | Box elder wood carving | 27" | Outdoor UV + water protected |
-| `buffalo` | Buffalo | Acrylic on canvas | 36×24 | Gaming-machine inspired |
+Inventory comes entirely from the **live site** — `sync_from_gallery()` pulls
+the real catalog from `/api/gallery` on every run. There are no hardcoded or
+seeded pieces. (A piece that only exists locally, e.g. a carving not in the
+paintings API, can still be added via `agent.add_piece(...)` and is preserved
+across syncs.)
 
 ## Project layout
 

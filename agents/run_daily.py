@@ -5,9 +5,9 @@ Usage:
   export ANTHROPIC_API_KEY=sk-...
   python -m agents.run_daily
 
-Loads any persisted state, seeds the known pieces if the state is empty, runs
-the daily workflow (each step isolated so one failure doesn't abort the rest),
-and saves state back to disk.
+Loads any persisted state, syncs inventory from the live site (the source of
+truth — no seeded pieces), runs the daily workflow (each step isolated so one
+failure doesn't abort the rest), and saves state back to disk.
 """
 
 from __future__ import annotations
@@ -44,10 +44,9 @@ async def _step(title: str, coro_factory: Callable[[], Awaitable[T]]) -> T | Non
 async def main() -> None:
     agent = ArtManagerAgent()
 
-    # Restore prior state; seed the known local pieces only if we're starting fresh.
+    # Restore prior state. Inventory comes entirely from the live site — no
+    # hardcoded/seeded pieces.
     agent.load()
-    if not agent.pieces:
-        agent.seed_known_pieces()
 
     # Live gallery is source of truth for paintings inventory.
     print(f"\n=== Syncing live gallery: {agent.site_url} ===")
@@ -78,24 +77,22 @@ async def main() -> None:
 
     await _step("Daily command board", agent.daily_command_board)
 
-    # Prefer a live for-sale piece when present; fall back to known local ids.
-    for_sale = agent.get_for_sale()
-    focus_ids = [p.id for p in for_sale[:2]] or ["summer-walleye", "buffalo"]
-    for pid in focus_ids:
-        piece = agent.get_piece(pid)
-        label = piece.title if piece else pid
-        await _step(
-            f"Buyers for {label}",
-            lambda pid=pid: agent.find_buyers_for_piece(pid),
-        )
+    # Focus on live for-sale pieces; otherwise the first pieces the site has.
+    focus = agent.get_for_sale()[:2] or agent.pieces[:2]
+    if not focus:
+        print("\n[no pieces from the live site yet — skipping buyer hunt and brief]")
+    else:
+        for piece in focus:
+            await _step(
+                f"Buyers for {piece.title}",
+                lambda pid=piece.id: agent.find_buyers_for_piece(pid),
+            )
 
-    brief_id = focus_ids[0]
-    brief_piece = agent.get_piece(brief_id)
-    brief_label = brief_piece.title if brief_piece else brief_id
-    await _step(
-        f"Sales brief: {brief_label}",
-        lambda: agent.create_sales_brief(brief_id),
-    )
+        brief_piece = focus[0]
+        await _step(
+            f"Sales brief: {brief_piece.title}",
+            lambda pid=brief_piece.id: agent.create_sales_brief(pid),
+        )
 
     agent.save()
     print(f"\n[state saved to {agent.state_path}]")

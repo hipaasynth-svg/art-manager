@@ -29,6 +29,14 @@ def _make_agent():
         pytest.skip(f"could not construct agent in this environment: {exc}")
 
 
+def _seed(agent) -> None:
+    """Add a couple of test pieces (inventory now comes from the live site)."""
+    from agents.models import ArtPiece
+
+    agent.add_piece(ArtPiece(id="walleye", title="Walleye", medium="carving", status="finished"))
+    agent.add_piece(ArtPiece(id="buffalo", title="Buffalo", medium="acrylic", status="finished"))
+
+
 def test_mutable_state_is_real_and_empty():
     a = _make_agent()
     # Must be real containers, not pydantic FieldInfo / shared class attrs.
@@ -41,7 +49,7 @@ def test_mutable_state_is_real_and_empty():
 
 def test_state_is_isolated_between_instances():
     a = _make_agent()
-    a.seed_known_pieces()
+    _seed(a)
     assert len(a.pieces) == 2
 
     b = _make_agent()
@@ -51,8 +59,8 @@ def test_state_is_isolated_between_instances():
 
 def test_deterministic_helpers_and_persistence(tmp_path):
     a = _make_agent()
-    a.seed_known_pieces()
-    assert {p.id for p in a.get_finished_unlisted()} == {"summer-walleye", "buffalo"}
+    _seed(a)
+    assert {p.id for p in a.get_finished_unlisted()} == {"walleye", "buffalo"}
     assert a.revenue_gap() == a.monthly_revenue_goal
 
     a.update_piece_status("buffalo", "listed")
