@@ -25,11 +25,12 @@ from typing import Any
 
 from nooa import Agent
 
-from . import logic, site
+from . import contacts, logic, site
 from .config import Config, load_config
 from .models import (
     AgentState,
     ArtPiece,
+    BuyerLead,
     ContentItem,
     ResearchInsight,
     SalesPipeline,
@@ -115,6 +116,9 @@ def _build_agent_class() -> type:
 
         # Local state persistence
         state_path: str = _CONFIG.state_path
+
+        # Buyer search / enrichment key (empty = AI-guessed leads only).
+        search_api_key: str = _CONFIG.search_api_key
 
         def __init__(self, **kwargs) -> None:
             # Pass through llm / storage / context etc. to nooa's Agent, then
@@ -208,6 +212,35 @@ def _build_agent_class() -> type:
         def update_piece_status(self, piece_id: str, status: str) -> bool:
             """Update a piece's status. Raises ValueError on an unknown status."""
             return logic.set_status(self.pieces, piece_id, status)
+
+        # === Buyer contacts (deterministic rendering) ===
+        @property
+        def has_buyer_search(self) -> bool:
+            """Whether a real buyer-search/enrichment key is configured."""
+            return bool(self.search_api_key)
+
+        def buyer_contacts_report(
+            self, piece_id: str, leads: list[BuyerLead]
+        ) -> str:
+            """Render structured buyer leads into a contact-rich report.
+
+            Contact details (email/phone/website/address) are always shown, and
+            leads still missing contact info are flagged for follow-up.
+            """
+            piece = self.get_piece(piece_id)
+            return contacts.contacts_report(piece.title if piece else piece_id, leads)
+
+        def export_buyer_contacts(
+            self, piece_id: str, leads: list[BuyerLead], path: str | None = None
+        ) -> str:
+            """Write the buyer contacts report for a piece to ``path``."""
+            from pathlib import Path
+
+            target = path or f"buyers_{piece_id}.md"
+            Path(target).write_text(
+                self.buyer_contacts_report(piece_id, leads), encoding="utf-8"
+            )
+            return target
 
         # === State persistence ===
         def to_state(self) -> AgentState:
@@ -320,6 +353,28 @@ def _build_agent_class() -> type:
             - One clear next outreach action
 
             Be specific and local to Minot / North Dakota. No generic advice.
+            """
+            ...
+
+        async def find_buyer_leads_for_piece(self, piece_id: str) -> list[BuyerLead]:
+            """
+            Find high-intent North Dakota buyers for one piece as STRUCTURED
+            leads, each carrying every contact detail you can find — this is the
+            report that must not drop contact info (issue #7).
+
+            For each of 3–6 leads populate BuyerLead: name, category, location,
+            why_fit, and as much of website / email / phone / address /
+            contact_name as is findable, plus source, next_action, confidence.
+
+            Use a real data source when one is configured: ``self.has_buyer_search``
+            tells you whether a search/enrichment key is set (Google Places,
+            Brave, SerpAPI, or Apollo). If MCP tools are available, use them to
+            enrich company contact info. When no source is configured, still
+            return named, plausible local targets but set confidence honestly and
+            put the lookup step in next_action rather than inventing emails/phones.
+
+            Return the list. Render it for humans with
+            ``self.buyer_contacts_report(piece_id, leads)``.
             """
             ...
 

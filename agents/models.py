@@ -77,6 +77,31 @@ class ResearchInsight(BaseModel):
     confidence: Literal["high", "medium", "low"]
 
 
+class BuyerLead(BaseModel):
+    """One findable North Dakota buyer with every contact detail we can get.
+
+    Issue #7: buyer reports must actually carry contact info. This model makes
+    the contact fields first-class so a report can never silently drop them.
+    """
+
+    name: str
+    category: str = ""  # e.g. "fishing lodge", "interior designer", "restaurant"
+    location: str = ""  # city / area in ND
+    why_fit: str = ""  # why this piece suits this buyer
+    website: str = ""
+    email: str = ""
+    phone: str = ""
+    address: str = ""
+    contact_name: str = ""  # a specific person when known
+    source: str = ""  # where the info came from (Google Places, Apollo, site…)
+    next_action: str = ""
+    confidence: Literal["high", "medium", "low"] = "medium"
+
+    def has_contact(self) -> bool:
+        """True if the lead carries at least one way to reach the buyer."""
+        return bool(self.email or self.phone or self.website or self.address)
+
+
 class SiteImage(BaseModel):
     src: str
     alt: str = ""

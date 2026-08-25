@@ -63,6 +63,10 @@ class Config:
     # Local state persistence
     state_path: str = "art_manager_state.json"
 
+    # Buyer search / enrichment (Google Places / Brave / SerpAPI / Apollo).
+    # Empty = no real search wired; buyer leads stay AI-guessed.
+    search_api_key: str = ""
+
     # Business targets
     monthly_revenue_goal: float = 2000.0
 
@@ -86,6 +90,7 @@ def load_config() -> Config:
         drive_buyers_id=_env("ART_MANAGER_DRIVE_BUYERS_ID", d.drive_buyers_id),
         drive_state_id=_env("ART_MANAGER_DRIVE_STATE_ID", d.drive_state_id),
         state_path=_env("ART_MANAGER_STATE_PATH", d.state_path),
+        search_api_key=_env("ART_MANAGER_SEARCH_API_KEY", d.search_api_key),
         monthly_revenue_goal=float(
             _env("ART_MANAGER_MONTHLY_REVENUE_GOAL", str(d.monthly_revenue_goal))
         ),

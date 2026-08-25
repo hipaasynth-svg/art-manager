@@ -14,6 +14,12 @@ def test_defaults(monkeypatch):
     assert cfg.model == DEFAULT_MODEL
     assert cfg.github_repo == "codycarlson.art"
     assert cfg.monthly_revenue_goal == 2000.0
+    assert cfg.search_api_key == ""
+
+
+def test_search_api_key_override(monkeypatch):
+    monkeypatch.setenv("ART_MANAGER_SEARCH_API_KEY", "secret-123")
+    assert load_config().search_api_key == "secret-123"
 
 
 def test_dotenv_file_is_loaded(tmp_path, monkeypatch):
