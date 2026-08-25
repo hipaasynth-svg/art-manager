@@ -162,6 +162,9 @@ def _build_agent_class() -> type:
             preserved. Catalog fields from the site win; local notes and
             outdoor_ready are kept when already set.
 
+            Available pieces with a price get a shareable ``?buy=<id>`` checkout
+            deep link when no Stripe Payment Link is set on the site.
+
             Returns a small summary the daily runner / LLM can log.
             """
             gallery = self.fetch_gallery()
@@ -174,7 +177,7 @@ def _build_agent_class() -> type:
                     "total": len(self.pieces),
                 }
 
-            live = logic.pieces_from_gallery(gallery)
+            live = logic.pieces_from_gallery(gallery, site_url=self.site_url)
             before = {p.id for p in self.pieces}
             self.pieces = logic.merge_gallery_into_pieces(self.pieces, live)
             after_ids = {p.id for p in self.pieces}
@@ -303,6 +306,7 @@ def _build_agent_class() -> type:
             """
             Write a clean sales brief for a finished piece usable for listings,
             DMs, or outreach. Keep it human and specific to the actual piece.
+            Include the buy link when the piece is sellable.
             """
             ...
 
@@ -327,7 +331,8 @@ def _build_agent_class() -> type:
             """
             Write a short, specific outreach message (email or DM) for one ND target
             about one specific piece. Personal, not spammy. Reference real local
-            context when possible. Keep it under 120 words.
+            context when possible. Keep it under 120 words. Include the buy link
+            when available.
             """
             ...
 
