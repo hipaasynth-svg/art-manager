@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .models import PIECE_STATUSES, ArtPiece, PieceStatus
+from .models import PIECE_STATUSES, ArtPiece, CheckoutSummary, PieceStatus
 
 DEFAULT_SITE_URL = "https://www.codycarlson.art"
 
@@ -170,6 +170,34 @@ def pieces_from_gallery(
             )
         )
     return out
+
+
+def checkout_summary(
+    gallery: dict[str, Any],
+    *,
+    site_url: str = DEFAULT_SITE_URL,
+) -> CheckoutSummary:
+    """Deterministic buyability read of the live ``/api/gallery`` catalog.
+
+    On-site Stripe Checkout prices an ``available`` piece from its ``price``
+    alone, so a piece is buyable now when it is for sale with a resolved
+    checkout link — which ``pieces_from_gallery`` fills from the price when no
+    explicit Payment Link is set. Empty ``buyUrl``/``stripePriceId`` therefore
+    does NOT mean "no checkout"; this counts what a visitor can actually pay for.
+    """
+    pieces = pieces_from_gallery(gallery, site_url=site_url)
+    sellable = sellable_pieces(pieces)
+    return CheckoutSummary(
+        on_site_checkout=True,
+        buyable_count=len(sellable),
+        buyable_ids=[p.id for p in sellable],
+        for_sale_count=len(for_sale_pieces(pieces)),
+        note=(
+            "On-site Stripe Checkout prices an 'available' piece from its price "
+            "via /api/checkout (Buy Now button + ?buy=<id> deep link), so empty "
+            "buyUrl/stripePriceId does NOT mean a piece can't be bought."
+        ),
+    )
 
 
 def merge_gallery_into_pieces(

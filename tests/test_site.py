@@ -116,6 +116,27 @@ def test_fetch_site_reads_public_page_and_grounds_with_gallery(monkeypatch):
     assert any(i.src == "https://example.com/f.jpg" for i in snapshot.images)
 
 
+def test_fetch_site_attaches_buyability_read(monkeypatch):
+    # An available, priced painting with empty buyUrl/stripePriceId — the case
+    # the old diagnosis wrongly called "no way to buy". The snapshot must carry
+    # a deterministic buyability read that counts it as payable.
+    def fake_get(url, timeout):
+        if url.endswith("/api/gallery"):
+            return (
+                '{"paintings":[{"id":"p_1","title":"Buffalo","price":"230.40",'
+                '"buyUrl":"","status":"available"}]}'
+            )
+        return "<!doctype html><html><head><title>Cody</title></head><body></body></html>"
+
+    monkeypatch.setattr("agents.site._get", fake_get)
+
+    snapshot = fetch_site("https://codycarlson.art")
+    assert snapshot.checkout is not None
+    assert snapshot.checkout.on_site_checkout is True
+    assert snapshot.checkout.buyable_count == 1
+    assert snapshot.checkout.buyable_ids == ["p_1"]
+
+
 def test_fetch_site_ok_false_when_public_page_unreadable(monkeypatch):
     def boom(url, timeout):
         if url.endswith("/api/gallery"):

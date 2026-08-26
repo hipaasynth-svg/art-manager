@@ -129,6 +129,30 @@ class SiteImage(BaseModel):
     alt: str = ""
 
 
+class CheckoutSummary(BaseModel):
+    """Deterministic read of whether a buyer can actually pay on the live site.
+
+    The store accepts card payment two ways, and a piece needs only ONE:
+      * an explicit Stripe Payment Link (``buyUrl``) or preset Price
+        (``stripePriceId``) set in /admin, OR
+      * on-site Stripe Checkout, which prices an ``available`` piece
+        SERVER-SIDE from its typed ``price`` via ``/api/checkout`` (reached by
+        the piece's Buy Now button and the ``?buy=<id>`` deep link).
+
+    So a painting that is ``available`` WITH a price is buyable right now even
+    when ``buyUrl`` and ``stripePriceId`` are both empty — that is the normal
+    case, not a defect. ``buyable_ids`` is the honest list of pieces a visitor
+    can pay for immediately; treat it as the source of truth for "can a buyer
+    pay", never the raw ``buyUrl``/``stripePriceId`` fields.
+    """
+
+    on_site_checkout: bool = True
+    buyable_count: int = 0
+    buyable_ids: list[str] = Field(default_factory=list)
+    for_sale_count: int = 0
+    note: str = ""
+
+
 class SiteSnapshot(BaseModel):
     """What the agent actually saw when it read the live website.
 
@@ -151,6 +175,10 @@ class SiteSnapshot(BaseModel):
     scripts: list[str] = Field(default_factory=list)  # script src URLs
     # Raw gallery API response used to build this snapshot.
     gallery_data: dict[str, Any] = Field(default_factory=dict)
+    # Deterministic buyability read derived from the catalog. Does NOT depend on
+    # buyUrl/stripePriceId — on-site checkout prices an available piece from its
+    # price alone — so diagnosis should trust this over the raw Stripe fields.
+    checkout: CheckoutSummary | None = None
     # Retained for compatibility with older saved snapshots.
     data_scripts: dict[str, str] = Field(default_factory=dict)
     error: str = ""
