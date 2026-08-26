@@ -19,6 +19,7 @@ from typing import Any
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
+from . import logic
 from .models import SiteImage, SiteSnapshot
 
 _PRICE_RE = re.compile(r"\$\s?\d[\d,]*(?:\.\d{2})?")
@@ -184,6 +185,9 @@ def fetch_site(
     gallery = fetch_gallery(url, timeout=timeout)
     if isinstance(gallery, dict) and gallery.get("ok") is not False:
         snap.gallery_data = gallery
+        # Deterministic buyability read so the diagnosis judges "can a buyer
+        # pay?" from real checkout rules, not from raw buyUrl/stripePriceId.
+        snap.checkout = logic.checkout_summary(gallery, site_url=url)
         paintings = gallery.get("paintings", [])
         if isinstance(paintings, list):
             snap.prices = _dedupe(

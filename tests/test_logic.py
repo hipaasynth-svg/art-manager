@@ -155,6 +155,32 @@ def test_pieces_from_gallery_buy_url_deep_link_and_explicit_wins():
     assert by_id["free"].buy_url is None
 
 
+def test_checkout_summary_counts_price_only_pieces_as_buyable():
+    # The exact shape that made the old diagnosis cry "no way to buy": an
+    # available, priced painting with empty buyUrl AND no stripePriceId. On-site
+    # checkout prices it from `price`, so it IS buyable.
+    gallery = {
+        "paintings": [
+            {"id": "p_1", "title": "Buffalo", "price": "230.40",
+             "buyUrl": "", "status": "available"},
+            {"id": "p_2", "title": "Sold", "price": "100",
+             "status": "sold"},  # not buyable
+            {"id": "p_3", "title": "No Price", "status": "available"},  # no price
+        ]
+    }
+    summary = logic.checkout_summary(gallery)
+    assert summary.on_site_checkout is True
+    assert summary.buyable_count == 1
+    assert summary.buyable_ids == ["p_1"]
+    assert summary.for_sale_count == 2  # p_1 and p_3 are available/for sale
+
+
+def test_checkout_summary_empty_when_nothing_buyable():
+    summary = logic.checkout_summary({"paintings": []})
+    assert summary.buyable_count == 0
+    assert summary.buyable_ids == []
+
+
 def test_pieces_from_gallery_handles_error_payload():
     assert logic.pieces_from_gallery({"ok": False, "error": "boom"}) == []
     assert logic.pieces_from_gallery({}) == []

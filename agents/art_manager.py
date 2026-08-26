@@ -419,9 +419,23 @@ def _build_agent_class() -> type:
             and availability from `gallery_data` — do NOT report them as
             "missing" just because they are absent from the visible page text.
 
+            HOW CHECKOUT ACTUALLY WORKS ON THIS SITE — do not get this wrong:
+            the store takes card payments through on-site Stripe Checkout, which
+            prices a piece SERVER-SIDE from its id. A painting that is
+            `available` with a `price` is buyable RIGHT NOW — via its Buy Now
+            button and the `?buy=<id>` deep link — even when its `buyUrl` and
+            `stripePriceId` fields are empty. Empty buyUrl / stripePriceId is the
+            NORMAL case and does NOT mean "no checkout". `snapshot.checkout` is a
+            deterministic buyability read (`buyable_count`, `buyable_ids`,
+            `for_sale_count`); treat it as the source of truth for whether a
+            buyer can pay. NEVER report "no way to buy" / "zero checkout" when
+            `snapshot.checkout.buyable_count` is greater than 0 — if you think
+            checkout is off, the only valid evidence is buyable_count == 0.
+
             Judge it as a tool for SELLING art:
-            - Is it clear what is for sale and at what price? Can a buyer actually
-              buy or inquire (checkout link, contact, commission CTA)?
+            - Given `snapshot.checkout`, can a buyer actually pay now, and is it
+              clear what is for sale and at what price? Can they also inquire
+              (contact, commission CTA)?
             - Trust signals, story, photo quality, mobile, load.
             Compare against self.last_research when present. Produce a clear
             diagnosis: what works, what's weak, and the top 3–5 highest-leverage
