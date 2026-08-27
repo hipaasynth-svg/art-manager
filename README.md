@@ -14,6 +14,23 @@ The agent's LLM-completed capabilities:
   real page, not a guess — see `agents/site.py`)
 - Site improvement proposals (implemented only via PR)
 
+## How v1 works (the daily packet)
+
+Each run (hands-free on GitHub Actions, or `python -m agents.run_daily`) the
+agent produces one act-in-minutes packet, emailed via Zoho:
+
+1. **Site diagnosis + command board** — the one thing to do, what to ignore.
+2. **Phone-first call sheet** — real ND businesses, numbers, and read-aloud
+   scripts, across a balanced, rotating **2 sculptures + 4 paintings**.
+3. **Sales brief** — paste-ready copy for the day's top piece.
+4. **Content pack** — an Instagram caption + a TikTok script.
+5. On Mondays, a **weekly review** rides along.
+
+It **remembers** between runs (state + `PLAYBOOK.md` on the `studio-state`
+branch), you **talk to it** via `STUDIO_NOTES.md`, it **learns** via
+`agent.reflect()`, and everything it writes obeys the **voice lock**
+(`STYLE_BIBLE.md`). Nothing is sent to a buyer without a human's yes.
+
 ## Hook it up (turning the portfolio into sales)
 
 The site is a portfolio today. Four plug-in points turn it into something that
@@ -66,9 +83,13 @@ plumbing is at different stages. This table is the source of truth:
 | Real buyer search (named ND leads) | ✅ Wired · needs key | `agents/search.py` (Google Places API New); set `ART_MANAGER_SEARCH_API_KEY` and `agent.lookup_local_businesses()` returns real name/phone/website. Without a key, `agent.has_buyer_search` is False and leads stay AI-guessed |
 | Send outreach email | ✅ Wired · needs Zoho | `agents/mail.py`; agent drafts, a human approves, `agent.send_outreach()` sends over Zoho SMTP. Set `ZOHO_MAIL_USER` / `ZOHO_MAIL_PASSWORD` (app password) |
 | Google Drive persistence | ✅ Wired · optional | `agents/drive.py` mirrors state to Drive after each save and restores it on load. Needs a service-account JSON (`ART_MANAGER_DRIVE_CREDENTIALS`) + `requirements-drive.txt`; falls back to local JSON otherwise |
-| 3-day printout automation | 🚧 Planned | No scheduler exists in this repo yet |
-| Site changes via GitHub PR | 🚧 Planned | The agent produces PR instructions; it does not open PRs itself |
-| Content generation agent | ✅ Implemented | Separate `ContentAgent` (`agents/content_agent.py`) — TikTok/IG/FB captions, short scripts, visual briefs on a schedule; actual posting needs a connector |
+| Hands-free daily scheduler | ✅ Implemented | `.github/workflows/daily.yml` runs the packet on a schedule + on demand and emails it via Zoho — no computer needed |
+| Durable memory across runs | ✅ Implemented | State + `PLAYBOOK.md` are persisted to the `studio-state` branch every run (Drive mirror optional). The agent resumes where it left off |
+| Studio voice lock | ✅ Implemented | `STYLE_BIBLE.md` injected into every prompt (`agents/voice.py`); off-voice copy is rewritten before it reaches Cody |
+| Phone-first call sheet | ✅ Implemented | `agents/callsheet.py` — real ND businesses + numbers + read-aloud scripts; a balanced, rotating 2 sculptures + 4 paintings per day |
+| Notes inbox + self-improvement | ✅ Implemented | `STUDIO_NOTES.md` (talk to it between runs) + `PLAYBOOK.md` (it learns), via `agents/notes.py` and `agent.reflect()` |
+| Content generation agent | ✅ Implemented + wired | `ContentAgent` runs in the daily job (Instagram caption + TikTok short script for the top piece) |
+| Site changes via GitHub PR | ⚙️ Human-in-loop by design | The agent proposes changes; a human (or Claude) opens the PR. Deliberately not auto-opened in v1 |
 
 State persists to a local JSON file (see **State** below) and, when a Drive
 service account is configured, is mirrored to Google Drive on every save and
@@ -106,10 +127,13 @@ agents/
   site.py         # reads the live site (stdlib only) into a SiteSnapshot
   contacts.py     # renders buyer leads into a contact-rich report
   search.py       # real buyer lookup via Google Places (needs a key)
+  callsheet.py    # deterministic phone-first call sheet from buyer leads
   mail.py         # sends approved outreach via Zoho SMTP (needs app password)
   drive.py        # optional Google Drive mirror of agent state
+  voice.py        # loads the studio voice lock (STYLE_BIBLE.md)
+  notes.py        # Cody's notes inbox + the self-improvement playbook
   config.py       # env-driven configuration
-  state.py        # local JSON state persistence
+  state.py        # JSON state persistence (durable across runs — see State)
   content.py      # deterministic social scaffolding (hashtags, schedule, render)
   art_manager.py  # the nooa Agent subclass (LLM-completed methods)
   content_agent.py# separate nooa agent for TikTok/IG/FB content generation
@@ -187,9 +211,13 @@ Missing optional secrets degrade gracefully; the run still works.
 
 ## State
 
-State (pieces, pipeline, revenue, focus) persists to a local JSON file so it
-survives between runs. Default path `art_manager_state.json` (gitignored);
-override with `ART_MANAGER_STATE_PATH`.
+State (pieces, pipeline, revenue, focus, learnings) persists to a local JSON
+file — default `art_manager_state.json` (gitignored); override with
+`ART_MANAGER_STATE_PATH`. To survive an **ephemeral** machine (GitHub Actions),
+the daily workflow restores it and `PLAYBOOK.md` from the `studio-state` branch
+before each run and pushes them back after; with a Drive service account set,
+`agents/drive.py` mirrors state to Drive too. So the agent resumes where it left
+off no matter where it runs.
 
 ## Tests
 

@@ -87,6 +87,10 @@ async def main() -> None:
 
     await _step("Daily command board", agent.daily_command_board)
 
+    # Weekly pulse on Mondays: a bigger-picture review rides along with the brief.
+    if datetime.date.today().weekday() == 0:
+        await _step("Weekly review", agent.weekly_review)
+
     # ---- Phone-first call sheet across a rotating set of pieces ----
     n_sculpt = int(os.environ.get("ART_MANAGER_DAILY_SCULPTURES", "2") or "2")
     n_paint = int(os.environ.get("ART_MANAGER_DAILY_PAINTINGS", "4") or "4")
