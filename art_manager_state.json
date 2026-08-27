@@ -1,0 +1,611 @@
+{
+  "pieces": [
+    {
+      "id": "p_mt5fnug53ohhae",
+      "title": "So seepee",
+      "medium": "Acrylic on canvas",
+      "status": "listed",
+      "kind": "painting",
+      "size": "11x16",
+      "price": 204.8,
+      "notes": "Synced from live gallery API",
+      "outdoor_ready": false,
+      "image_url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787466935128-j4iw0w.jpeg",
+      "for_sale": true,
+      "buy_url": "https://www.codycarlson.art/?buy=p_mt5fnug53ohhae"
+    },
+    {
+      "id": "p_mt5kqdkw909ioq",
+      "title": "Buds Big Day",
+      "medium": "Acrylic on canvas",
+      "status": "listed",
+      "kind": "painting",
+      "size": "16x20",
+      "price": 256.0,
+      "notes": "Synced from live gallery API",
+      "outdoor_ready": false,
+      "image_url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787475686313-tkju4f.jpeg",
+      "for_sale": true,
+      "buy_url": "https://www.codycarlson.art/?buy=p_mt5kqdkw909ioq"
+    },
+    {
+      "id": "p_mt5kvet986zwet",
+      "title": "Great American Buffalo",
+      "medium": "Acrylic on canvas",
+      "status": "listed",
+      "kind": "painting",
+      "size": "16x24",
+      "price": 230.4,
+      "notes": "Synced from live gallery API",
+      "outdoor_ready": false,
+      "image_url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787475769119-xxwrlc.jpeg",
+      "for_sale": true,
+      "buy_url": "https://www.codycarlson.art/?buy=p_mt5kvet986zwet"
+    },
+    {
+      "id": "p_mt5l3wkc5mbsyk",
+      "title": "Bud Jr. (2024 #2)",
+      "medium": "Acrylic on canvas",
+      "status": "listed",
+      "kind": "painting",
+      "size": "11x16",
+      "price": 140.8,
+      "notes": "Synced from live gallery API",
+      "outdoor_ready": false,
+      "image_url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787476137888-9ho8em.jpeg",
+      "for_sale": true,
+      "buy_url": "https://www.codycarlson.art/?buy=p_mt5l3wkc5mbsyk"
+    },
+    {
+      "id": "p_mt5l53858u7e4w",
+      "title": "Bud Jr. (2024 #3)",
+      "medium": "Acrylic on canvas",
+      "status": "listed",
+      "kind": "painting",
+      "size": "11x16",
+      "price": 140.0,
+      "notes": "Synced from live gallery API",
+      "outdoor_ready": false,
+      "image_url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787476431644-4afng0.jpeg",
+      "for_sale": true,
+      "buy_url": "https://www.codycarlson.art/?buy=p_mt5l53858u7e4w"
+    },
+    {
+      "id": "p_mt5lbdtv1jludy",
+      "title": "Buds Brother and Damion",
+      "medium": "Acrylic on canvas",
+      "status": "listed",
+      "kind": "painting",
+      "size": "16x20",
+      "price": 259.0,
+      "notes": "Synced from live gallery API",
+      "outdoor_ready": false,
+      "image_url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787476541463-hevnbc.jpeg",
+      "for_sale": true,
+      "buy_url": "https://www.codycarlson.art/?buy=p_mt5lbdtv1jludy"
+    },
+    {
+      "id": "p_mt5ldqlrrjif69",
+      "title": "Great American Buffalo (2026 #3)",
+      "medium": "Acrylic on canvas",
+      "status": "listed",
+      "kind": "painting",
+      "size": "24x36",
+      "price": 525.0,
+      "notes": "Synced from live gallery API",
+      "outdoor_ready": false,
+      "image_url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787476771819-6xt3bl.jpeg",
+      "for_sale": true,
+      "buy_url": "https://www.codycarlson.art/?buy=p_mt5ldqlrrjif69"
+    },
+    {
+      "id": "p_mt5liod192yq7u",
+      "title": "Boohoo My Friend (2026)",
+      "medium": "Acrylic on canvas",
+      "status": "listed",
+      "kind": "painting",
+      "size": "16x20",
+      "price": 190.0,
+      "notes": "Synced from live gallery API",
+      "outdoor_ready": false,
+      "image_url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787477169016-78p1ur.jpeg",
+      "for_sale": true,
+      "buy_url": "https://www.codycarlson.art/?buy=p_mt5liod192yq7u"
+    },
+    {
+      "id": "p_mt5lr6xrpz8jx3",
+      "title": "A New Friend, Little Skodes W/ Bud Jr.",
+      "medium": "Acrylic on canvas",
+      "status": "listed",
+      "kind": "painting",
+      "size": "16x20",
+      "price": 256.0,
+      "notes": "Synced from live gallery API",
+      "outdoor_ready": false,
+      "image_url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787477773038-y09jbm.jpeg",
+      "for_sale": true,
+      "buy_url": "https://www.codycarlson.art/?buy=p_mt5lr6xrpz8jx3"
+    },
+    {
+      "id": "p_mt5m44wfv8kvih",
+      "title": "Skodee (2025)",
+      "medium": "Acrylic on canvas",
+      "status": "listed",
+      "kind": "painting",
+      "size": "12x12",
+      "price": 145.0,
+      "notes": "Synced from live gallery API",
+      "outdoor_ready": false,
+      "image_url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787478029567-v9lmj6.jpeg",
+      "for_sale": true,
+      "buy_url": "https://www.codycarlson.art/?buy=p_mt5m44wfv8kvih"
+    },
+    {
+      "id": "p_mtabjvenpld298",
+      "title": "Walleye #2 (2026)",
+      "medium": "Boxelder",
+      "status": "listed",
+      "kind": "sculpture",
+      "size": "27x12x12",
+      "price": 550.0,
+      "notes": "Synced from live gallery API",
+      "outdoor_ready": false,
+      "image_url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/sculptures/1787762383343-99d5a2.jpeg",
+      "for_sale": true,
+      "buy_url": "https://www.codycarlson.art/?buy=p_mtabjvenpld298"
+    },
+    {
+      "id": "p_mtablr07ibgsqc",
+      "title": "Walleye #3 (2026)",
+      "medium": "Boxelder",
+      "status": "listed",
+      "kind": "sculpture",
+      "size": "27x12x8",
+      "price": 550.0,
+      "notes": "Synced from live gallery API",
+      "outdoor_ready": false,
+      "image_url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/sculptures/1787762887541-sx40wa.jpeg",
+      "for_sale": true,
+      "buy_url": "https://www.codycarlson.art/?buy=p_mtablr07ibgsqc"
+    },
+    {
+      "id": "p_mtabv4sa31uvad",
+      "title": "Stubborn (2026)",
+      "medium": "Maple",
+      "status": "listed",
+      "kind": "sculpture",
+      "size": "18x16x8",
+      "price": 140.0,
+      "notes": "Synced from live gallery API",
+      "outdoor_ready": false,
+      "image_url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/sculptures/1787762904073-7ljydo.jpeg",
+      "for_sale": true,
+      "buy_url": "https://www.codycarlson.art/?buy=p_mtabv4sa31uvad"
+    },
+    {
+      "id": "p_mtabvhhzgeshg5",
+      "title": "Squirrels gone wild (2026)",
+      "medium": "Boxelder",
+      "status": "listed",
+      "kind": "sculpture",
+      "size": "23 x12x13",
+      "price": 225.0,
+      "notes": "Synced from live gallery API",
+      "outdoor_ready": false,
+      "image_url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/sculptures/1787762921219-q2amw6.jpeg",
+      "for_sale": true,
+      "buy_url": "https://www.codycarlson.art/?buy=p_mtabvhhzgeshg5"
+    }
+  ],
+  "content_queue": [],
+  "pipeline": {
+    "leads": [],
+    "active_conversations": [],
+    "closed_this_month": 0,
+    "revenue_this_month": 0.0
+  },
+  "monthly_revenue_goal": 2000.0,
+  "focus_this_week": "finish and list highest-leverage pieces",
+  "last_research": [],
+  "pending_changes": [],
+  "last_site_snapshot": {
+    "url": "https://codycarlson.art",
+    "fetched_at": "2026-08-27T22:49:08+00:00",
+    "ok": true,
+    "status": null,
+    "title": "Cody Carlson — Sculptor, Painter & Lapidary Artist in Minot, ND",
+    "description": "Cody Carlson is a self-taught sculptor, painter, and lapidary artist in Minot, North Dakota — wildlife and figurative carvings, paintings, and cut stones. Finished work for sale and custom commissions open.",
+    "text": "Cody Carlson — Sculptor, Painter & Lapidary Artist in Minot, ND Skip to contact form × Cody Carlson Books Open Call Email Start a Commission Inquiry Name Email Phone (optional) Tell me about your project Send Inquiry Scroll to view work ‹ › ‹ › Pricing Collaborator Stay in Touch Hear when new pieces come available, plus shows and studio news — an occasional note from the studio, nothing more. No spam; unsubscribe anytime. Keep me posted Proudly supported by · · Instagram © Cody Carlson. All rights reserved. ×",
+    "images": [
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787047166577-vif3qg.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787047243087-aw7qpn.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787047266036-o5eae3.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787111561172-w4md92.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787111605284-ov0pgd.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787111648129-h0e7og.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787111666153-hu4ul9.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787462543053-sa475i.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787462640804-mx4qlg.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787763580162-75utp2.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/studio/1787047387940-15jctm.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/studio/1787047409261-xu11c1.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/studio/1787047464514-708126.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/studio/1787111725346-086px2.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/studio/1787111750347-t51wep.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/studio/1787111784665-6bmiut.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/stones/1787111804288-2fosam.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/stones/1787111814968-2xk4uc.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/stones/1787111834765-ggx34z.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/stones/1787111854315-2nbq7i.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/stones/1787111869990-px75vt.jpeg",
+        "alt": ""
+      },
+      {
+        "src": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/stones/1787111937028-owopln.jpeg",
+        "alt": ""
+      }
+    ],
+    "links": [
+      "https://codycarlson.art#intake-form",
+      "https://codycarlson.art"
+    ],
+    "emails": [
+      "cody@codycarlson.art"
+    ],
+    "phones": [
+      "+17013895644"
+    ],
+    "prices": [
+      "$204.80",
+      "$256",
+      "$230.40",
+      "$140.80",
+      "$140",
+      "$259",
+      "$525",
+      "$190",
+      "$145"
+    ],
+    "scripts": [
+      "https://codycarlson.art/_vercel/insights/script.js",
+      "https://codycarlson.art/js/config.js",
+      "https://codycarlson.art/js/main.js"
+    ],
+    "gallery_data": {
+      "galleries": {
+        "featured": [
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787047166577-vif3qg.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787047243087-aw7qpn.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787047266036-o5eae3.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787111561172-w4md92.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787111605284-ov0pgd.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787111648129-h0e7og.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787111666153-hu4ul9.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787462543053-sa475i.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787462640804-mx4qlg.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/featured/1787763580162-75utp2.jpeg"
+        ],
+        "studio": [
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/studio/1787047387940-15jctm.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/studio/1787047409261-xu11c1.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/studio/1787047464514-708126.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/studio/1787111725346-086px2.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/studio/1787111750347-t51wep.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/studio/1787111784665-6bmiut.jpeg"
+        ],
+        "stones": [
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/stones/1787111804288-2fosam.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/stones/1787111814968-2xk4uc.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/stones/1787111834765-ggx34z.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/stones/1787111854315-2nbq7i.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/stones/1787111869990-px75vt.jpeg",
+          "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/stones/1787111937028-owopln.jpeg"
+        ],
+        "silverRings": []
+      },
+      "background": [
+        "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/background/1787478304161-wsog01.jpeg",
+        "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/background/1787478373113-pswv0w.jpeg",
+        "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/background/1787478458408-eyo8c4.jpeg",
+        "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/background/1787478594898-uoyiqu.jpeg",
+        "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/background/1787478892290-g0vbm8.jpeg",
+        "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/background/1787479110140-gfobdb.jpeg",
+        "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/background/1787479200500-qm7o3l.jpeg",
+        "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/background/1787479258604-iegozj.jpeg"
+      ],
+      "paintings": [
+        {
+          "id": "p_mt5fnug53ohhae",
+          "url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787466935128-j4iw0w.jpeg",
+          "title": "So seepee",
+          "medium": "Acrylic on canvas ",
+          "size": "11x16",
+          "story": "Close-up original acrylic painting of a white cat asleep against rose-pink fabric. Soft muzzle, rust ear, and loose brushwork on canvas. Small original pet portrait for bedroom, nursery, or cat-lover wall. Hand-painted in Minot, North Dakota.",
+          "alt": "Original acrylic sleeping cat painting white cat portrait 11x16 pet art Cody Carlson Minot North Dakota",
+          "price": "204.80",
+          "buyUrl": "",
+          "stripePriceId": "",
+          "status": "available",
+          "slug": "so-seepee"
+        },
+        {
+          "id": "p_mt5kqdkw909ioq",
+          "url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787475686313-tkju4f.jpeg",
+          "title": "Buds Big Day ",
+          "medium": "Acrylic on canvas ",
+          "size": "16x20",
+          "story": "Bold original acrylic of Bud, a black-and-white tuxedo cat with yellow eyes and a thick ruff. Heavy brushstrokes, pink nose, and high-contrast fur. Statement pet portrait and contemporary cat painting for living room or office.",
+          "alt": "Original acrylic tuxedo cat painting yellow eyes 16x20 pet portrait cat art North Dakota artist Cody Carlson",
+          "price": "256",
+          "buyUrl": "",
+          "stripePriceId": "",
+          "status": "available",
+          "slug": "buds-big-day"
+        },
+        {
+          "id": "p_mt5kvet986zwet",
+          "url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787475769119-xxwrlc.jpeg",
+          "title": "Great American Buffalo ",
+          "medium": "Acrylic on canvas ",
+          "size": "16x24",
+          "story": "Head-on original acrylic of an American bison / buffalo against a prairie sky, framed in a painted gold-yellow border. Western wildlife art with horn sweep, woolly mane, and a direct stare. Fits cabin, ranch, or Great Plains wall.",
+          "alt": "Original American bison painting acrylic buffalo art 16x24 western wildlife North Dakota Cody Carlson",
+          "price": "230.40",
+          "buyUrl": "",
+          "stripePriceId": "",
+          "status": "available",
+          "slug": "great-american-buffalo"
+        },
+        {
+          "id": "p_mt5l3wkc5mbsyk",
+          "url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787476137888-9ho8em.jpeg",
+          "title": "Bud Jr. (2024 #2)",
+          "medium": "Acrylic on canvas ",
+          "size": "11x16",
+          "story": "Night-sky original of Bud Jr.: tuxedo cat, yellow eyes, green collar, crescent moon and stars. Small original cat painting and custom-pet-portrait sample. Ready to hang.",
+          "alt": "Original acrylic tuxedo cat painting night sky pet portrait 11x16 cat art Cody Carlson Minot ND",
+          "price": "140.80",
+          "buyUrl": "",
+          "stripePriceId": "",
+          "status": "available",
+          "slug": "bud-jr-2024-2"
+        },
+        {
+          "id": "p_mt5l53858u7e4w",
+          "url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787476431644-4afng0.jpeg",
+          "title": "Bud Jr. (2024 #3)",
+          "medium": "Acrylic on canvas ",
+          "size": "11x16",
+          "story": "Front-facing original acrylic of Bud Jr. against a blue sky with a jet trail. Bright yellow-green eyes and pink nose. Works as a finished original or as the style sample for a commissioned pet portrait.",
+          "alt": "Original acrylic pet portrait tuxedo cat painting 11x16 custom cat art North Dakota artist Cody Carlson",
+          "price": "140",
+          "buyUrl": "",
+          "stripePriceId": "",
+          "status": "available",
+          "slug": "bud-jr-2024-3"
+        },
+        {
+          "id": "p_mt5lbdtv1jludy",
+          "url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787476541463-hevnbc.jpeg",
+          "title": "Buds Brother and Damion",
+          "medium": "Acrylic on canvas ",
+          "size": "16x20",
+          "story": "Two-cat original: a black-and-white cat perched above a long-haired white cat on a muted studio ground. Contemporary pet painting with quiet humor. Original acrylic animal art from Minot.",
+          "alt": "Original acrylic two cat painting pet portrait 16x20 cat art North Dakota Cody Carlson",
+          "price": "259",
+          "buyUrl": "",
+          "stripePriceId": "",
+          "status": "available",
+          "slug": "buds-brother-and-damion"
+        },
+        {
+          "id": "p_mt5ldqlrrjif69",
+          "url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787476771819-6xt3bl.jpeg",
+          "title": "Great American Buffalo (2026 #3)",
+          "medium": "Acrylic on canvas ",
+          "size": "24x36",
+          "story": "The large-format buffalo. Dark brown bison head, white horns, blue-and-cloud sky, painted gold frame edge. Signed “CC.” Statement western wildlife painting for lodge, ranch house, or North Dakota living room. Largest original on the site.",
+          "alt": "Large original American bison painting 24x36 acrylic buffalo art western wildlife North Dakota Cody Carlson",
+          "price": "525",
+          "buyUrl": "",
+          "stripePriceId": "",
+          "status": "available",
+          "slug": "great-american-buffalo-2026-3"
+        },
+        {
+          "id": "p_mt5liod192yq7u",
+          "url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787477169016-78p1ur.jpeg",
+          "title": "Boohoo My Friend (2026)",
+          "medium": "Acrylic on canvas ",
+          "size": "16x20",
+          "story": "Original acrylic of a black cat with a white bib looking up through pale yellow and blue light. Soft eyes, long whiskers, loose sky. Contemporary cat painting for hallway or studio wall.",
+          "alt": "Original acrylic black and white cat painting 16x20 pet portrait cat art Cody Carlson Minot North Dakota",
+          "price": "190",
+          "buyUrl": "",
+          "stripePriceId": "",
+          "status": "available",
+          "slug": "boohoo-my-friend-2026"
+        },
+        {
+          "id": "p_mt5lr6xrpz8jx3",
+          "url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787477773038-y09jbm.jpeg",
+          "title": "A New Friend, Little Skodes W/ Bud Jr.",
+          "medium": "Acrylic on canvas ",
+          "size": "16x20",
+          "story": "Orange-and-white kitten (Skodee) and tuxedo cat (Bud Jr.) sharing a windowsill over bare winter trees and a prairie house. Original two-cat painting and North Dakota interior scene.",
+          "alt": "Original acrylic two cat painting window portrait orange tabby tuxedo cat 16x20 North Dakota pet art Cody Carlson",
+          "price": "256",
+          "buyUrl": "",
+          "stripePriceId": "",
+          "status": "available",
+          "slug": "a-new-friend-little-skodes-w-bud-jr"
+        },
+        {
+          "id": "p_mt5m44wfv8kvih",
+          "url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/paintings/1787478029567-v9lmj6.jpeg",
+          "title": "Skodee (2025)",
+          "medium": "Acrylic on canvas ",
+          "size": "12x12",
+          "story": "Square original of Skodee, an orange-and-white cat in a window with a small house and trees behind. Thick paint, dark eyes, pink nose. Affordable original cat painting and gift-size pet portrait.",
+          "alt": "Original acrylic orange tabby cat painting 12x12 pet portrait window cat art Cody Carlson North Dakota",
+          "price": "145",
+          "buyUrl": "",
+          "stripePriceId": "",
+          "status": "available",
+          "slug": "skodee-2025"
+        }
+      ],
+      "sculptures": [
+        {
+          "id": "p_mtabjvenpld298",
+          "url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/sculptures/1787762383343-99d5a2.jpeg",
+          "title": "Walleye #2 (2026)",
+          "medium": "Boxelder",
+          "size": "27x12x12",
+          "story": "Handmade boxelder walleye wood carving — 27\" original North Dakota fish sculpture \nHand-carved from North Dakota boxelder, this 27\" walleye sculpture is an original wildlife wood carving built for cabin, lodge, or outdoor display. Dark grain and torch-burned barring run the length of the fish. Open mouth, raised dorsal fin, and a live-edge boxelder base keep the piece looking like it just came out of a prairie lake. Finished outdoor-ready. One-of-one. Signed by Minot sculptor Cody Carlson.",
+          "alt": "Original handmade boxelder walleye wood carving 27 inch North Dakota fish sculpture outdoor cabin art by Cody Carlson Minot ND",
+          "price": "550",
+          "buyUrl": "",
+          "stripePriceId": "",
+          "status": "available",
+          "slug": "walleye-2-2026"
+        },
+        {
+          "id": "p_mtablr07ibgsqc",
+          "url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/sculptures/1787762887541-sx40wa.jpeg",
+          "title": "Walleye #3 (2026)",
+          "medium": "Boxelder",
+          "size": "27x12x8",
+          "story": "Original 27\" boxelder walleye carving — handmade fish sculpture for cabin or garden \nA second original walleye, carved from figured boxelder with yellow-gold eyes and a long torch-darkened body. Fins are cut proud of the slab so the fish reads from across a room or a patio. Mounted on a rectangular boxelder plank with natural red heartwood streaks. Outdoor-ready wood sculpture for lake house, man cave, or North Dakota wildlife collection.",
+          "alt": "Handmade boxelder walleye fish carving 27 inch original wood sculpture North Dakota wildlife art outdoor ready Cody Carlson",
+          "price": "550",
+          "buyUrl": "",
+          "stripePriceId": "",
+          "status": "available",
+          "slug": "walleye-3-2026"
+        },
+        {
+          "id": "p_mtabv4sa31uvad",
+          "url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/sculptures/1787762904073-7ljydo.jpeg",
+          "title": "Stubborn (2026)",
+          "medium": "Maple",
+          "size": "18x16x8",
+          "story": "Handmade maple wood carving — original stubborn fox sculpture\nCarved from a single maple block, Stubborn is a compact animal sculpture with crossed-arm posture, pointed ears, and a burned-in stare. Figured grain does the work of fur. Small enough for a shelf or entry table, heavy enough to hold a garden corner. Original handmade wood carving from Minot, North Dakota.",
+          "alt": "Original maple fox wood carving handmade animal sculpture stubborn wildlife art North Dakota sculptor Cody Carlson",
+          "price": "140",
+          "buyUrl": "",
+          "stripePriceId": "",
+          "status": "available",
+          "slug": "stubborn-2026"
+        },
+        {
+          "id": "p_mtabvhhzgeshg5",
+          "url": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/sculptures/1787762921219-q2amw6.jpeg",
+          "title": "Squirrels gone wild (2026)",
+          "medium": "Boxelder ",
+          "size": "23 x12x13",
+          "story": "Handmade boxelder squirrel wood carving — original outdoor garden sculpture\nA standing boxelder squirrel clutching an acorn, carved as a one-piece outdoor wood sculpture. Dark stained tail and paws against raw honey grain, glass-black eyes, and a grin that reads from the yard. Built as garden art, cabin porch piece, or rustic wildlife décor. Original 2026 carving by Cody Carlson.",
+          "alt": "Handmade boxelder squirrel wood carving original garden sculpture outdoor wildlife art North Dakota Cody Carlson",
+          "price": "225",
+          "buyUrl": "",
+          "stripePriceId": "",
+          "status": "available",
+          "slug": "squirrels-gone-wild-2026"
+        }
+      ],
+      "collaborator": {
+        "photo": "",
+        "headline": "",
+        "bio": ""
+      },
+      "bio": {
+        "photo": "https://zlm0ewd384883ohc.public.blob.vercel-storage.com/gallery/bio/1787763514015-lefaqh.jpeg"
+      }
+    },
+    "checkout": {
+      "on_site_checkout": true,
+      "buyable_count": 14,
+      "buyable_ids": [
+        "p_mt5fnug53ohhae",
+        "p_mt5kqdkw909ioq",
+        "p_mt5kvet986zwet",
+        "p_mt5l3wkc5mbsyk",
+        "p_mt5l53858u7e4w",
+        "p_mt5lbdtv1jludy",
+        "p_mt5ldqlrrjif69",
+        "p_mt5liod192yq7u",
+        "p_mt5lr6xrpz8jx3",
+        "p_mt5m44wfv8kvih",
+        "p_mtabjvenpld298",
+        "p_mtablr07ibgsqc",
+        "p_mtabv4sa31uvad",
+        "p_mtabvhhzgeshg5"
+      ],
+      "for_sale_count": 14,
+      "note": "On-site Stripe Checkout prices an 'available' piece from its price via /api/checkout (Buy Now button + ?buy=<id> deep link), so empty buyUrl/stripePriceId does NOT mean a piece can't be bought."
+    },
+    "data_scripts": {},
+    "error": ""
+  }
+}
