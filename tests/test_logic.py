@@ -181,6 +181,47 @@ def test_checkout_summary_empty_when_nothing_buyable():
     assert summary.buyable_ids == []
 
 
+def test_pieces_from_gallery_includes_sculptures():
+    # The site sells sculptures too (own store + on-site checkout), so they must
+    # be ingested as inventory — not left out and wrongly reported "not buyable".
+    gallery = {
+        "paintings": [
+            {"id": "p_1", "title": "So seepee", "price": "205", "status": "available"},
+        ],
+        "sculptures": [
+            {"id": "s_1", "title": "Walleye Carving", "price": "550",
+             "buyUrl": "", "status": "available"},
+            {"id": "s_2", "title": "Fox", "status": "sold", "price": "300"},
+        ],
+    }
+    pieces = logic.pieces_from_gallery(gallery)
+    by_id = {p.id: p for p in pieces}
+    assert set(by_id) == {"p_1", "s_1", "s_2"}
+    # Available, priced sculpture with no explicit link → buyable via deep link.
+    assert by_id["s_1"].for_sale is True
+    assert by_id["s_1"].buy_url == "https://www.codycarlson.art/?buy=s_1"
+    # Default medium for a sculpture entry that doesn't state its own.
+    assert by_id["s_1"].medium == "Sculpture"
+    assert by_id["s_2"].for_sale is False  # sold
+
+
+def test_checkout_summary_counts_sculptures_as_buyable():
+    # A priced, available sculpture is buyable exactly like a painting; the
+    # summary must include it (the bug: it counted paintings only).
+    gallery = {
+        "paintings": [
+            {"id": "p_1", "title": "Cat", "price": "205", "status": "available"},
+        ],
+        "sculptures": [
+            {"id": "s_1", "title": "Buffalo Carving", "price": "525", "status": "available"},
+        ],
+    }
+    summary = logic.checkout_summary(gallery)
+    assert summary.buyable_count == 2
+    assert set(summary.buyable_ids) == {"p_1", "s_1"}
+    assert summary.for_sale_count == 2
+
+
 def test_pieces_from_gallery_handles_error_payload():
     assert logic.pieces_from_gallery({"ok": False, "error": "boom"}) == []
     assert logic.pieces_from_gallery({}) == []

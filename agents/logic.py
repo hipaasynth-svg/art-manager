@@ -105,6 +105,53 @@ def checkout_deep_link(piece_id: str, site_url: str = DEFAULT_SITE_URL) -> str:
     return f"{base}/?buy={piece_id}"
 
 
+def _piece_from_gallery_item(
+    item: Any,
+    *,
+    default_medium: str,
+    site_url: str,
+) -> ArtPiece | None:
+    """Convert one gallery store entry into an ArtPiece, or None if malformed."""
+    if not isinstance(item, dict):
+        return None
+    pid = str(item.get("id") or "").strip()
+    title = str(item.get("title") or "").strip()
+    if not pid or not title:
+        return None
+
+    status, for_sale = _map_gallery_status(item.get("status"))
+    buy = item.get("buyUrl") or item.get("buy_url") or None
+    if isinstance(buy, str):
+        buy = buy.strip() or None
+    else:
+        buy = None
+
+    price = _parse_price(item.get("price"))
+    # On-site Stripe Checkout works from price alone; give the agent a
+    # shareable deep link when no explicit Payment Link is set.
+    if for_sale and price is not None and not buy:
+        buy = checkout_deep_link(pid, site_url)
+
+    image = item.get("url") or item.get("image") or item.get("image_url")
+    image_url = str(image).strip() if image else None
+
+    medium = str(item.get("medium") or default_medium).strip() or default_medium
+    size = str(item.get("size") or "").strip()
+
+    return ArtPiece(
+        id=pid,
+        title=title,
+        medium=medium,
+        status=status,
+        size=size,
+        price=price,
+        image_url=image_url,
+        for_sale=for_sale,
+        buy_url=buy,
+        notes="Synced from live gallery API",
+    )
+
+
 def pieces_from_gallery(
     gallery: dict[str, Any],
     *,
@@ -112,9 +159,13 @@ def pieces_from_gallery(
 ) -> list[ArtPiece]:
     """Convert the live ``/api/gallery`` JSON into ArtPiece records.
 
-    Only the ``paintings`` array is treated as inventory. Portfolio galleries
-    (featured / studio / stones) are display-only and are not turned into pieces.
-    Malformed entries are skipped rather than raising.
+    Both for-sale stores are treated as inventory: ``paintings`` AND
+    ``sculptures``. The website sells sculptures the same way it sells paintings
+    (their own store + on-site Stripe Checkout), so leaving them out made the
+    agent under-report buyability — reporting priced, available sculptures as
+    "not buyable" when a visitor can in fact pay for them. Portfolio galleries
+    (featured / studio / stones) stay display-only and are not turned into
+    pieces. Malformed entries are skipped rather than raising.
 
     If a piece has a price (or is for sale) but no Stripe Payment Link, ``buy_url``
     is filled with the site deep link ``?buy=<id>`` so outreach can share a
@@ -123,52 +174,19 @@ def pieces_from_gallery(
     if not isinstance(gallery, dict) or gallery.get("ok") is False:
         return []
 
-    raw_paintings = gallery.get("paintings", [])
-    if not isinstance(raw_paintings, list):
-        return []
-
     out: list[ArtPiece] = []
-    for item in raw_paintings:
-        if not isinstance(item, dict):
+    # Both stores share one id space and the same object shape; only the default
+    # medium differs when a piece doesn't state its own.
+    for store_key, default_medium in (("paintings", "Painting"), ("sculptures", "Sculpture")):
+        raw = gallery.get(store_key, [])
+        if not isinstance(raw, list):
             continue
-        pid = str(item.get("id") or "").strip()
-        title = str(item.get("title") or "").strip()
-        if not pid or not title:
-            continue
-
-        status, for_sale = _map_gallery_status(item.get("status"))
-        buy = item.get("buyUrl") or item.get("buy_url") or None
-        if isinstance(buy, str):
-            buy = buy.strip() or None
-        else:
-            buy = None
-
-        price = _parse_price(item.get("price"))
-        # On-site Stripe Checkout works from price alone; give the agent a
-        # shareable deep link when no explicit Payment Link is set.
-        if for_sale and price is not None and not buy:
-            buy = checkout_deep_link(pid, site_url)
-
-        image = item.get("url") or item.get("image") or item.get("image_url")
-        image_url = str(image).strip() if image else None
-
-        medium = str(item.get("medium") or "Painting").strip() or "Painting"
-        size = str(item.get("size") or "").strip()
-
-        out.append(
-            ArtPiece(
-                id=pid,
-                title=title,
-                medium=medium,
-                status=status,
-                size=size,
-                price=price,
-                image_url=image_url,
-                for_sale=for_sale,
-                buy_url=buy,
-                notes="Synced from live gallery API",
+        for item in raw:
+            piece = _piece_from_gallery_item(
+                item, default_medium=default_medium, site_url=site_url
             )
-        )
+            if piece is not None:
+                out.append(piece)
     return out
 
 
