@@ -1,0 +1,10 @@
+# Optional dependencies: Google Drive state persistence (agents/drive.py).
+#
+# Install these ALONGSIDE the base requirements only if you want the agent to
+# mirror its state to Google Drive (so it survives an ephemeral machine):
+#   pip install -r requirements.txt -r requirements-drive.txt
+#
+# Without them, agents/drive.py's drive_configured() is False and the agent
+# simply persists to the local JSON file — no error, no behaviour change.
+google-api-python-client>=2.0,<3.0
+google-auth>=2.0,<3.0

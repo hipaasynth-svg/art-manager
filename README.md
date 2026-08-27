@@ -42,9 +42,11 @@ sells — each is independent, wire them in any order:
    SerpAPI also work) to turn AI-guessed buyer *types* into named, verifiable ND
    leads with links.
 
-5. **Send the outreach → Gmail.** The agent drafts the emails; connect Gmail so
-   it can send the ones you approve. (Authorize the Gmail connector in an
-   interactive session — OAuth can't be done headless.)
+5. **Send the outreach → Zoho Mail.** The agent drafts the emails; set
+   `ZOHO_MAIL_USER` and `ZOHO_MAIL_PASSWORD` (a Zoho **app password**) and, once
+   you approve a draft, `agent.send_outreach(to, subject, body)` sends it over
+   Zoho SMTP (`agents/mail.py`). No hosted connector needed — the agent runs
+   standalone, so it sends directly.
 
 ## Status of integrations
 
@@ -61,15 +63,16 @@ plumbing is at different stages. This table is the source of truth:
 | Per-piece metadata / SEO | ✅ Implemented | `agents/seo.py`; `build_piece_seo()`, `export_seo_file()`; LLM enriches copy + AI-search research |
 | Payments (checkout links) | 🔌 Bring your own | Per-piece Stripe/Gumroad link in `buy_url` (see **Hook it up**) |
 | Buyer leads + contact report | ✅ Implemented | `BuyerLead` carries all contact fields; `find_buyer_leads_for_piece()` + `buyer_contacts_report()` / `export_buyer_contacts()` |
-| Real buyer search (named ND leads) | 🔌 Needs API key | `ART_MANAGER_SEARCH_API_KEY`; without it buyers stay AI-guessed (`agent.has_buyer_search`) |
-| Send outreach email | 🔌 Needs Gmail | Agent drafts; connect Gmail to send |
-| Google Drive persistence | 🚧 Planned | Folder IDs are configured; no Drive client is wired up yet |
+| Real buyer search (named ND leads) | ✅ Wired · needs key | `agents/search.py` (Google Places API New); set `ART_MANAGER_SEARCH_API_KEY` and `agent.lookup_local_businesses()` returns real name/phone/website. Without a key, `agent.has_buyer_search` is False and leads stay AI-guessed |
+| Send outreach email | ✅ Wired · needs Zoho | `agents/mail.py`; agent drafts, a human approves, `agent.send_outreach()` sends over Zoho SMTP. Set `ZOHO_MAIL_USER` / `ZOHO_MAIL_PASSWORD` (app password) |
+| Google Drive persistence | ✅ Wired · optional | `agents/drive.py` mirrors state to Drive after each save and restores it on load. Needs a service-account JSON (`ART_MANAGER_DRIVE_CREDENTIALS`) + `requirements-drive.txt`; falls back to local JSON otherwise |
 | 3-day printout automation | 🚧 Planned | No scheduler exists in this repo yet |
 | Site changes via GitHub PR | 🚧 Planned | The agent produces PR instructions; it does not open PRs itself |
 | Content generation agent | ✅ Implemented | Separate `ContentAgent` (`agents/content_agent.py`) — TikTok/IG/FB captions, short scripts, visual briefs on a schedule; actual posting needs a connector |
 
-State currently persists to a local JSON file (see **State** below). Drive as
-the long-term home is a follow-up.
+State persists to a local JSON file (see **State** below) and, when a Drive
+service account is configured, is mirrored to Google Drive on every save and
+restored on load (`agents/drive.py`) — so it survives an ephemeral machine.
 
 ## Live Google Drive
 
@@ -100,13 +103,18 @@ agents/
   models.py       # pydantic data models (framework-agnostic)
   logic.py        # pure deterministic helpers (no LLM / no nooa)
   seo.py          # deterministic per-piece meta tags + schema.org JSON-LD
+  site.py         # reads the live site (stdlib only) into a SiteSnapshot
+  contacts.py     # renders buyer leads into a contact-rich report
+  search.py       # real buyer lookup via Google Places (needs a key)
+  mail.py         # sends approved outreach via Zoho SMTP (needs app password)
+  drive.py        # optional Google Drive mirror of agent state
   config.py       # env-driven configuration
   state.py        # local JSON state persistence
   content.py      # deterministic social scaffolding (hashtags, schedule, render)
   art_manager.py  # the nooa Agent subclass (LLM-completed methods)
   content_agent.py# separate nooa agent for TikTok/IG/FB content generation
   run_daily.py    # example runner
-tests/            # unit tests for models / logic / config / state
+tests/            # unit tests (models/logic/config/state/search/mail/drive/…)
 ```
 
 `models`, `logic`, `config`, and `state` do not import nooa, so they can be

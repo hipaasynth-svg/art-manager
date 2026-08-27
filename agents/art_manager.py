@@ -25,7 +25,7 @@ from typing import Any
 
 from nooa import Agent
 
-from . import logic, seo, site
+from . import drive, logic, mail, search, seo, site
 from .config import Config, load_config
 from .models import (
     AgentState,
@@ -145,6 +145,54 @@ def _build_agent_class() -> type:
         def get_sellable(self) -> list[ArtPiece]:
             """For-sale pieces with a price and a checkout link (buyer can pay now)."""
             return logic.sellable_pieces(self.pieces)
+
+        # === Real buyer search (Google Places; needs ART_MANAGER_SEARCH_API_KEY) ===
+        @property
+        def has_buyer_search(self) -> bool:
+            """True when a buyer-search key is configured.
+
+            When False, buyer-hunting stays AI-guessed and unverified; when True,
+            ``lookup_local_businesses`` returns real named businesses with
+            contact details.
+            """
+            return search.search_configured(self.search_api_key)
+
+        def lookup_local_businesses(
+            self, category: str, location: str = "North Dakota", *, limit: int = 5
+        ) -> list[dict[str, str]]:
+            """Real local businesses for buyer hunting (name/address/phone/website).
+
+            Deterministic — the LLM buyer methods call this to ground leads in
+            real places. Returns ``[]`` when no search key is set, so callers
+            fall back to AI-guessed leads.
+            """
+            if not self.has_buyer_search:
+                return []
+            return [
+                {
+                    "name": r.name,
+                    "address": r.address,
+                    "phone": r.phone,
+                    "website": r.website,
+                    "source": r.source,
+                }
+                for r in search.search_local_businesses(
+                    category, location, api_key=self.search_api_key, limit=limit
+                )
+            ]
+
+        # === Send approved outreach (Zoho Mail SMTP; needs ZOHO_MAIL_* env) ===
+        def send_outreach(self, to: str, subject: str, body: str) -> str:
+            """Send an APPROVED outreach email via Zoho Mail.
+
+            The agent drafts outreach (``create_nd_outreach_brief``); a human
+            approves the copy; only then is this called. Requires
+            ``ZOHO_MAIL_USER`` / ``ZOHO_MAIL_PASSWORD`` in the environment (see
+            ``agents/mail.py``) — raises a clear error otherwise, so nothing is
+            silently dropped.
+            """
+            mail.send_email(to, subject, body)
+            return f"sent to {to}"
 
         def fetch_gallery(self) -> dict[str, Any]:
             """Fetch the live gallery JSON for agent use.
@@ -267,10 +315,30 @@ def _build_agent_class() -> type:
             self.last_site_snapshot = state.last_site_snapshot
 
         def save(self, path: str | None = None) -> None:
-            save_state(self.to_state(), path or self.state_path)
+            target = path or self.state_path
+            save_state(self.to_state(), target)
+            # Mirror to Drive when configured, so state survives an ephemeral
+            # machine. Best-effort: the local copy is the working copy, and a
+            # Drive failure never breaks the run.
+            if drive.drive_configured():
+                from pathlib import Path
+
+                drive.save_json(
+                    self.drive_state_id,
+                    drive.STATE_FILENAME,
+                    Path(target).read_text(encoding="utf-8"),
+                )
 
         def load(self, path: str | None = None) -> None:
-            self.apply_state(load_state(path or self.state_path))
+            target = path or self.state_path
+            # Prefer the Drive copy when present (it survives a wiped machine);
+            # fall back to local disk otherwise.
+            if drive.drive_configured():
+                text = drive.load_json(self.drive_state_id, drive.STATE_FILENAME)
+                if text:
+                    self.apply_state(AgentState.model_validate_json(text))
+                    return
+            self.apply_state(load_state(target))
 
         # === Core business methods (LLM-completed) ===
         async def daily_command_board(self) -> str:
@@ -373,11 +441,14 @@ def _build_agent_class() -> type:
             contact_name as is findable, plus source, next_action, confidence.
 
             Use a real data source when one is configured: ``self.has_buyer_search``
-            tells you whether a search/enrichment key is set (Google Places,
-            Brave, SerpAPI, or Apollo). If MCP tools are available, use them to
-            enrich company contact info. When no source is configured, still
-            return named, plausible local targets but set confidence honestly and
-            put the lookup step in next_action rather than inventing emails/phones.
+            tells you whether a search key is set. When it is True, call
+            ``self.lookup_local_businesses(category, location)`` for each buyer
+            category you're targeting and build leads from the real
+            name/address/phone/website it returns (source "Google Places",
+            confidence high when it carries a contact detail). When it is False,
+            still return named, plausible local targets but set confidence
+            honestly and put the lookup step in next_action rather than inventing
+            emails/phones.
 
             Return the list. Render it for humans with
             ``self.buyer_contacts_report(piece_id, leads)``.
