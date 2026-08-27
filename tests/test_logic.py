@@ -239,6 +239,46 @@ def test_rotate_daily_windows_and_covers():
     assert logic.rotate_daily([1, 2], 0, day=5) == [2]  # n clamped to >=1; start=(5*1)%2=1
 
 
+def test_pieces_from_gallery_sets_kind():
+    gallery = {
+        "paintings": [{"id": "p1", "title": "Cat", "price": "200", "status": "available"}],
+        "sculptures": [{"id": "s1", "title": "Walleye", "price": "550", "status": "available"}],
+    }
+    by_id = {p.id: p for p in logic.pieces_from_gallery(gallery)}
+    assert by_id["p1"].kind == "painting"
+    assert by_id["s1"].kind == "sculpture"
+
+
+def test_daily_focus_balances_sculptures_and_paintings():
+    from agents.models import ArtPiece
+
+    def mk(i, kind):
+        return ArtPiece(id=f"{kind}{i}", title=f"{kind}{i}", medium="m",
+                        status="listed", kind=kind, for_sale=True, price=100.0)
+
+    pieces = [mk(i, "sculpture") for i in range(4)] + [mk(i, "painting") for i in range(10)]
+    focus = logic.daily_focus(pieces, sculptures=2, paintings=4, day=0)
+    kinds = [p.kind for p in focus]
+    assert kinds.count("sculpture") == 2
+    assert kinds.count("painting") == 4
+    # Different day → different pieces (rotation), same balance.
+    focus2 = logic.daily_focus(pieces, sculptures=2, paintings=4, day=1)
+    assert [p.id for p in focus2] != [p.id for p in focus]
+    assert [p.kind for p in focus2].count("sculpture") == 2
+
+
+def test_daily_focus_handles_short_pools():
+    from agents.models import ArtPiece
+
+    only_two_sculpt = [
+        ArtPiece(id=f"s{i}", title="s", medium="m", status="listed",
+                 kind="sculpture", for_sale=True) for i in range(2)
+    ]
+    # Asking for 2 sculptures + 4 paintings when there are 2 sculptures / 0 paintings.
+    focus = logic.daily_focus(only_two_sculpt, sculptures=2, paintings=4, day=3)
+    assert len(focus) == 2 and all(p.kind == "sculpture" for p in focus)
+
+
 def test_pieces_from_gallery_handles_error_payload():
     assert logic.pieces_from_gallery({"ok": False, "error": "boom"}) == []
     assert logic.pieces_from_gallery({}) == []
