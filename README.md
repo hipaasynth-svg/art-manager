@@ -165,6 +165,26 @@ except `ANTHROPIC_API_KEY` to actually call the model.
 python -m agents.run_daily
 ```
 
+## Run it hands-free (GitHub Actions)
+
+No computer required: `.github/workflows/daily.yml` runs the daily workflow on a
+schedule (13:00 UTC ≈ 8am Central) and on demand from the **Actions** tab. The
+brief prints to the run log, is saved as a downloadable artifact, and — when
+Zoho Mail is configured — is emailed to you. It never sends outreach to buyers;
+it only emails you your own brief.
+
+Add the keys as repository **Secrets** (Settings → Secrets and variables →
+Actions → *New repository secret*), never in the code:
+
+| Secret | Needed for |
+|--------|-----------|
+| `ANTHROPIC_API_KEY` | the AI parts (command board, briefs) — required |
+| `ART_MANAGER_SEARCH_API_KEY` | real ND buyer lookup (Google Places) — optional |
+| `ZOHO_MAIL_USER` | your Zoho address, e.g. `cody@codycarlson.art` — optional |
+| `ZOHO_MAIL_PASSWORD` | a Zoho **app password** (not the login) — optional |
+
+Missing optional secrets degrade gracefully; the run still works.
+
 ## State
 
 State (pieces, pipeline, revenue, focus) persists to a local JSON file so it
