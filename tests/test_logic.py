@@ -222,6 +222,23 @@ def test_checkout_summary_counts_sculptures_as_buyable():
     assert summary.for_sale_count == 2
 
 
+def test_rotate_daily_windows_and_covers():
+    items = list(range(14))
+    # Same day is deterministic; different days shift the window.
+    assert logic.rotate_daily(items, 4, day=0) == [0, 1, 2, 3]
+    assert logic.rotate_daily(items, 4, day=1) == [4, 5, 6, 7]
+    # Wraps around the end of the list.
+    assert logic.rotate_daily(items, 4, day=3) == [12, 13, 0, 1]
+    # Over a cycle of days, every item gets covered.
+    seen = set()
+    for d in range(14):
+        seen.update(logic.rotate_daily(items, 4, day=d))
+    assert seen == set(items)
+    # Edge cases.
+    assert logic.rotate_daily([], 4, day=2) == []
+    assert logic.rotate_daily([1, 2], 0, day=5) == [2]  # n clamped to >=1; start=(5*1)%2=1
+
+
 def test_pieces_from_gallery_handles_error_payload():
     assert logic.pieces_from_gallery({"ok": False, "error": "boom"}) == []
     assert logic.pieces_from_gallery({}) == []

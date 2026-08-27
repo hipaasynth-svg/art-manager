@@ -25,7 +25,7 @@ from typing import Any
 
 from nooa import Agent
 
-from . import drive, logic, mail, search, seo, site
+from . import callsheet, drive, logic, mail, search, seo, site, voice
 from .config import Config, load_config
 from .models import (
     AgentState,
@@ -84,6 +84,11 @@ def _build_agent_class() -> type:
 
         Be direct, practical, and protective of Cody's limited energy and time.
         Prefer one high-leverage action over many weak ones.
+
+        VOICE LOCK: every word you write for the public — briefs, outreach, call
+        scripts, listings — MUST follow the studio voice bible in
+        ``self.style_bible`` (also appended below). If a line is off-voice or
+        uses a banned word, rewrite it before it reaches Cody.
         """
 
         # === State ===
@@ -131,6 +136,8 @@ def _build_agent_class() -> type:
             self.last_research = []
             self.pending_changes = []
             self.last_site_snapshot = None
+            # Studio voice, loaded from STYLE_BIBLE.md (fallback baked in).
+            self.style_bible = voice.load_style_bible()
 
         # === Deterministic helpers (delegate to pure logic) ===
         def get_finished_unlisted(self) -> list[ArtPiece]:
@@ -193,6 +200,18 @@ def _build_agent_class() -> type:
             """
             mail.send_email(to, subject, body)
             return f"sent to {to}"
+
+        # === Phone-first call sheet (deterministic) ===
+        def build_call_sheet(
+            self, items: list[tuple[ArtPiece, list[BuyerLead]]], *, date_str: str = ""
+        ) -> str:
+            """Render a phone-first daily call sheet from (piece, leads) pairs.
+
+            Deterministic — the LLM enriches each lead's ``why_fit`` upstream via
+            ``find_buyer_leads_for_piece``; this turns the leads into a dial-down
+            sheet (number, why-fit, read-aloud script, buy link) for a caller.
+            """
+            return callsheet.render_call_sheet(items, date_str=date_str)
 
         def fetch_gallery(self) -> dict[str, Any]:
             """Fetch the live gallery JSON for agent use.
@@ -547,6 +566,14 @@ def _build_agent_class() -> type:
             """
             ...
 
+    # Bind the studio voice into the system prompt itself, so it applies to
+    # every method whether or not nooa surfaces instance attributes. Read at
+    # class-build time; STYLE_BIBLE.md edits take effect on the next run.
+    ArtManagerAgent.__doc__ = (
+        (ArtManagerAgent.__doc__ or "")
+        + "\n\n===== STUDIO VOICE BIBLE (obey in all public copy) =====\n"
+        + voice.load_style_bible()
+    )
     return ArtManagerAgent
 
 
