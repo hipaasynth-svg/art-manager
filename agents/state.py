@@ -1,10 +1,11 @@
 """
 Local JSON persistence for the agent's business state.
 
-The agent's Drive folders (see config) are the intended long-term home for
-state, but that integration is not wired up yet. Until it is, this keeps state
-on local disk so pieces, pipeline, and revenue survive between runs instead of
-resetting every time.
+This is the working copy on disk. Between runs it is made durable two ways
+(either/both): the GitHub Actions job persists it to the ``studio-state`` branch
+(see ``.github/workflows/daily.yml``), and, when a service account is set,
+``agents/drive.py`` mirrors it to Google Drive. Locally, this keeps pieces,
+pipeline, revenue, and learnings across runs instead of resetting each time.
 """
 
 from __future__ import annotations
