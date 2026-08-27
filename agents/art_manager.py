@@ -209,7 +209,7 @@ def _build_agent_class() -> type:
             return snap
 
         def sync_from_gallery(self) -> dict[str, Any]:
-            """Pull live ``/api/gallery`` paintings into ``self.pieces``.
+            """Pull live ``/api/gallery`` paintings and sculptures into ``self.pieces``.
 
             Local-only inventory (e.g. carvings not in the paintings API) is
             preserved. Catalog fields from the site win; local notes and
