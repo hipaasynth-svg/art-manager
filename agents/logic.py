@@ -46,6 +46,21 @@ def revenue_gap(monthly_goal: float, revenue_this_month: float) -> float:
     return max(0.0, monthly_goal - revenue_this_month)
 
 
+def rotate_daily(items: list, n: int, day: int) -> list:
+    """A deterministic daily window of ``n`` items that rotates by ``day``.
+
+    Used so the daily run works a different slice of the catalog each day and
+    covers every piece across a cycle, instead of always the first two. Empty in
+    → empty out; ``n`` is clamped to at least 1.
+    """
+    if not items:
+        return []
+    n = max(1, n)
+    start = (day * n) % len(items)
+    rotated = items[start:] + items[:start]
+    return rotated[:n]
+
+
 def get_piece(pieces: list[ArtPiece], piece_id: str) -> ArtPiece | None:
     for p in pieces:
         if p.id == piece_id:

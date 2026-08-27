@@ -1,22 +1,33 @@
 """
-Quick runner for the Art Manager.
+Daily runner for the Art Manager — the studio "floor".
 
-Usage:
-  export ANTHROPIC_API_KEY=sk-...
-  python -m agents.run_daily
+Loads state, syncs inventory from the live site, then produces one packet a
+human can act on in minutes:
 
-Loads any persisted state, syncs inventory from the live site (the source of
-truth — no seeded pieces), runs the daily workflow (each step isolated so one
-failure doesn't abort the rest), and saves state back to disk.
+  1. Site diagnosis + a ruthless command board
+  2. A phone-first CALL SHEET across a rotating set of for-sale pieces
+     (real ND businesses + numbers from Google Places, on-voice scripts)
+  3. A sales brief for the day's top piece
+  4. A CONTENT pack (Instagram caption + TikTok script) for the top piece
+
+Every step is isolated so one failure doesn't abort the rest. Output prints to
+the log and — via the GitHub Actions workflow — is emailed to Cody.
+
+Knobs (env):
+  ART_MANAGER_DAILY_PIECES   how many pieces to hunt buyers for per run (default 4)
 """
 
 from __future__ import annotations
 
 import asyncio
+import datetime
 import logging
+import os
 from typing import Awaitable, Callable, TypeVar
 
+from agents import logic
 from agents.art_manager import ArtManagerAgent
+from agents.models import ArtPiece, BuyerLead
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("art_manager")
@@ -25,11 +36,7 @@ T = TypeVar("T")
 
 
 async def _step(title: str, coro_factory: Callable[[], Awaitable[T]]) -> T | None:
-    """Run one workflow step, logging and swallowing failures.
-
-    Takes a factory so the coroutine is only created when we run it, and a
-    failure in one step doesn't prevent the others from running.
-    """
+    """Run one workflow step, printing the result and swallowing failures."""
     print(f"\n=== {title} ===")
     try:
         result = await coro_factory()
@@ -41,14 +48,20 @@ async def _step(title: str, coro_factory: Callable[[], Awaitable[T]]) -> T | Non
         return None
 
 
+async def _leads(agent: ArtManagerAgent, piece: ArtPiece) -> list[BuyerLead]:
+    """Structured leads for one piece; [] on failure (never aborts the run)."""
+    try:
+        return await agent.find_buyer_leads_for_piece(piece.id) or []
+    except Exception as exc:  # noqa: BLE001
+        log.exception("leads for %r failed: %s", piece.title, exc)
+        return []
+
+
 async def main() -> None:
     agent = ArtManagerAgent()
-
-    # Restore prior state. Inventory comes entirely from the live site — no
-    # hardcoded/seeded pieces.
     agent.load()
 
-    # Live gallery is source of truth for paintings inventory.
+    today = datetime.date.today().isoformat()
     print(f"\n=== Syncing live gallery: {agent.site_url} ===")
     sync = agent.sync_from_gallery()
     if sync.get("ok"):
@@ -68,31 +81,50 @@ async def main() -> None:
 
     snap = agent.last_site_snapshot
     if snap and snap.ok:
-        await _step(
-            "Site diagnosis (grounded in the live page)",
-            lambda: agent.analyze_current_site(snap),
-        )
+        await _step("Site diagnosis (grounded in the live page)", lambda: agent.analyze_current_site(snap))
     elif snap:
         print(f"  site snapshot not ok: {snap.error}")
 
     await _step("Daily command board", agent.daily_command_board)
 
-    # Focus on live for-sale pieces; otherwise the first pieces the site has.
-    focus = agent.get_for_sale()[:2] or agent.pieces[:2]
+    # ---- Phone-first call sheet across a rotating set of pieces ----
+    n = int(os.environ.get("ART_MANAGER_DAILY_PIECES", "4") or "4")
+    doy = datetime.date.today().timetuple().tm_yday
+    focus = logic.rotate_daily(agent.get_for_sale(), n, doy) or agent.pieces[:n]
+    pairs: list[tuple[ArtPiece, list[BuyerLead]]] = []
     if not focus:
-        print("\n[no pieces from the live site yet — skipping buyer hunt and brief]")
+        print("\n[no pieces from the live site yet — skipping call sheet]")
     else:
+        if not agent.has_buyer_search:
+            print("\n[note: ART_MANAGER_SEARCH_API_KEY not set — leads will be "
+                  "AI-guessed, not verified Google Places businesses]")
+        print(f"\n[hunting buyers for {len(focus)} piece(s) this run]")
         for piece in focus:
-            await _step(
-                f"Buyers for {piece.title}",
-                lambda pid=piece.id: agent.find_buyers_for_piece(pid),
-            )
+            leads = await _leads(agent, piece)
+            pairs.append((piece, leads))
+        print("\n=== CALL SHEET ===")
+        print(agent.build_call_sheet(pairs, date_str=today))
 
-        brief_piece = focus[0]
-        await _step(
-            f"Sales brief: {brief_piece.title}",
-            lambda pid=brief_piece.id: agent.create_sales_brief(pid),
-        )
+    # ---- Sales brief for the day's top piece ----
+    if focus:
+        top = focus[0]
+        await _step(f"Sales brief: {top.title}", lambda pid=top.id: agent.create_sales_brief(pid))
+
+    # ---- Content pack for the day's top piece ----
+    if focus:
+        top = focus[0]
+        try:
+            from agents.content_agent import ContentAgent
+
+            content_agent = ContentAgent()
+            print("\n=== CONTENT PACK ===")
+            await _step(f"Instagram caption: {top.title}",
+                        lambda p=top: content_agent.write_caption(p, "instagram"))
+            await _step(f"TikTok short script: {top.title}",
+                        lambda p=top: content_agent.write_short_script(p, "tiktok"))
+        except Exception as exc:  # noqa: BLE001 - content is a bonus, never fatal
+            log.exception("content pack failed: %s", exc)
+            print(f"[content pack skipped: {exc}]")
 
     agent.save()
     print(f"\n[state saved to {agent.state_path}]")
