@@ -25,7 +25,7 @@ from typing import Any
 
 from nooa import Agent
 
-from . import callsheet, drive, logic, mail, search, seo, site, voice
+from . import callsheet, drive, logic, mail, notes, search, seo, site, voice
 from .config import Config, load_config
 from .models import (
     AgentState,
@@ -138,6 +138,8 @@ def _build_agent_class() -> type:
             self.last_site_snapshot = None
             # Studio voice, loaded from STYLE_BIBLE.md (fallback baked in).
             self.style_bible = voice.load_style_bible()
+            # Cody's between-run notes (STUDIO_NOTES.md); "" when the inbox is empty.
+            self.studio_notes = notes.load_notes()
 
         # === Deterministic helpers (delegate to pure logic) ===
         def get_finished_unlisted(self) -> list[ArtPiece]:
@@ -566,14 +568,46 @@ def _build_agent_class() -> type:
             """
             ...
 
+        # === Self-improvement ===
+        async def reflect(self) -> str:
+            """
+            Review today's run and write down what to do differently next time.
+
+            Look at: the pipeline (revenue_this_month, leads, conversations,
+            closed_this_month), which pieces you worked, ``self.studio_notes``
+            (Cody's latest input), and the playbook already in your context.
+            Then output 1-3 SHORT, concrete learnings — what to push, what to
+            stop, which buyer types or pieces are converting, a pattern worth
+            repeating. No fluff, no restating the obvious, at most 3 bullets. If
+            nothing new was learned, return an empty string.
+
+            Return ONLY the bullet lines (each starting with "- "); they are
+            appended verbatim to the studio playbook.
+            """
+            ...
+
     # Bind the studio voice into the system prompt itself, so it applies to
     # every method whether or not nooa surfaces instance attributes. Read at
     # class-build time; STYLE_BIBLE.md edits take effect on the next run.
-    ArtManagerAgent.__doc__ = (
-        (ArtManagerAgent.__doc__ or "")
-        + "\n\n===== STUDIO VOICE BIBLE (obey in all public copy) =====\n"
-        + voice.load_style_bible()
-    )
+    doc = (ArtManagerAgent.__doc__ or "")
+    doc += "\n\n===== STUDIO VOICE BIBLE (obey in all public copy) =====\n"
+    doc += voice.load_style_bible()
+    # Each GitHub Actions run is a fresh process, so these files are re-read
+    # every run: the agent starts each day already knowing what it learned and
+    # whatever Cody wrote in the notes inbox.
+    _playbook = notes.load_playbook()
+    if _playbook:
+        doc += (
+            "\n\n===== STUDIO PLAYBOOK (what has worked — apply it, don't relearn it) =====\n"
+            + _playbook
+        )
+    _notes = notes.load_notes()
+    if _notes:
+        doc += (
+            "\n\n===== CODY'S NOTES FOR TODAY (honor these; they override defaults) =====\n"
+            + _notes
+        )
+    ArtManagerAgent.__doc__ = doc
     return ArtManagerAgent
 
 

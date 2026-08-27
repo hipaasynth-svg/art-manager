@@ -129,6 +129,18 @@ async def main() -> None:
             log.exception("content pack failed: %s", exc)
             print(f"[content pack skipped: {exc}]")
 
+    # ---- Self-improvement: record what to do differently, into the playbook ----
+    learnings = await _step("Reflect (self-improvement)", agent.reflect)
+    if learnings and str(learnings).strip():
+        try:
+            from agents import notes
+
+            if notes.append_playbook(str(learnings), today=today):
+                print("[playbook updated]")
+        except Exception as exc:  # noqa: BLE001 - never fatal
+            log.exception("playbook update failed: %s", exc)
+            print(f"[playbook update skipped: {exc}]")
+
     agent.save()
     print(f"\n[state saved to {agent.state_path}]")
 

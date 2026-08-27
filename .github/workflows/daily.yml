@@ -26,6 +26,9 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
+    # Needed to push the agent's memory (state + playbook) to the studio-state branch.
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -36,12 +39,31 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Restore the agent's memory (state + learned playbook) from the
+      # studio-state branch, so each run continues where the last left off.
+      - name: Restore studio memory
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          repo_url="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          rm -rf /tmp/mem
+          if git clone --depth=1 --branch studio-state "$repo_url" /tmp/mem 2>/dev/null; then
+            for f in art_manager_state.json PLAYBOOK.md; do
+              if [ -f "/tmp/mem/$f" ]; then cp "/tmp/mem/$f" "./$f"; echo "restored $f"; fi
+            done
+          else
+            echo "no studio-state branch yet — starting fresh"
+          fi
+
       - name: Run the daily workflow
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           ART_MANAGER_SEARCH_API_KEY: ${{ secrets.ART_MANAGER_SEARCH_API_KEY }}
           ZOHO_MAIL_USER: ${{ secrets.ZOHO_MAIL_USER }}
           ZOHO_MAIL_PASSWORD: ${{ secrets.ZOHO_MAIL_PASSWORD }}
+          # Daily working mix (set repo Variables to override; defaults here).
+          ART_MANAGER_DAILY_SCULPTURES: ${{ vars.ART_MANAGER_DAILY_SCULPTURES || '2' }}
+          ART_MANAGER_DAILY_PAINTINGS: ${{ vars.ART_MANAGER_DAILY_PAINTINGS || '4' }}
         # Capture the brief so the next step can email it, while still showing
         # it in the run log.
         run: python -m agents.run_daily | tee daily_brief.txt
@@ -75,3 +97,31 @@ jobs:
           name: daily-brief
           path: daily_brief.txt
           if-no-files-found: ignore
+
+      # Persist the agent's memory (state + updated playbook) back to the
+      # studio-state branch so the next run remembers today.
+      - name: Save studio memory
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          repo_url="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          rm -rf /tmp/mem
+          if ! git clone --depth=1 --branch studio-state "$repo_url" /tmp/mem 2>/dev/null; then
+            git clone --depth=1 "$repo_url" /tmp/mem
+            ( cd /tmp/mem && git checkout --orphan studio-state && git rm -rf . >/dev/null 2>&1 || true )
+          fi
+          copied=0
+          for f in art_manager_state.json PLAYBOOK.md; do
+            if [ -f "./$f" ]; then cp "./$f" "/tmp/mem/$f"; copied=1; fi
+          done
+          if [ "$copied" = "0" ]; then echo "nothing to save"; exit 0; fi
+          cd /tmp/mem
+          git config user.name "art-manager-bot"
+          git config user.email "art-manager-bot@users.noreply.github.com"
+          # -f because art_manager_state.json is gitignored in the main repo.
+          git add -f art_manager_state.json PLAYBOOK.md 2>/dev/null || true
+          if git diff --cached --quiet; then echo "no memory changes"; exit 0; fi
+          git commit -m "studio memory $(date -u +%FT%TZ)"
+          git push "$repo_url" HEAD:studio-state
+          echo "studio memory saved"
