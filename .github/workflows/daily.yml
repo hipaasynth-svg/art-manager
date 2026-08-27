@@ -8,8 +8,9 @@ name: Daily Art Manager
 # Actions), never committed:
 #   ANTHROPIC_API_KEY            - required for the AI parts (board, briefs)
 #   ART_MANAGER_SEARCH_API_KEY   - optional: real ND buyer lookup (Google Places)
-#   ZOHO_MAIL_USER               - optional: your Zoho address, e.g. cody@codycarlson.art
+#   ZOHO_MAIL_USER               - optional: the real Zoho mailbox, e.g. cody@hipaasynth.com
 #   ZOHO_MAIL_PASSWORD           - optional: a Zoho APP password (not the login)
+#   ZOHO_MAIL_FROM               - optional: send AS a verified alias, e.g. cody1@codycarlson.art
 # Missing optional keys just degrade gracefully — the run still works.
 
 on:
@@ -42,6 +43,7 @@ jobs:
           ART_MANAGER_SEARCH_API_KEY: ${{ secrets.ART_MANAGER_SEARCH_API_KEY }}
           ZOHO_MAIL_USER: ${{ secrets.ZOHO_MAIL_USER }}
           ZOHO_MAIL_PASSWORD: ${{ secrets.ZOHO_MAIL_PASSWORD }}
+          ZOHO_MAIL_FROM: ${{ secrets.ZOHO_MAIL_FROM }}
         # Capture the brief so the next step can email it, while still showing
         # it in the run log.
         run: python -m agents.run_daily | tee daily_brief.txt
@@ -51,6 +53,7 @@ jobs:
         env:
           ZOHO_MAIL_USER: ${{ secrets.ZOHO_MAIL_USER }}
           ZOHO_MAIL_PASSWORD: ${{ secrets.ZOHO_MAIL_PASSWORD }}
+          ZOHO_MAIL_FROM: ${{ secrets.ZOHO_MAIL_FROM }}
         run: |
           python - <<'PY'
           from agents import mail

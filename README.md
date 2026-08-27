@@ -180,8 +180,9 @@ Actions → *New repository secret*), never in the code:
 |--------|-----------|
 | `ANTHROPIC_API_KEY` | the AI parts (command board, briefs) — required |
 | `ART_MANAGER_SEARCH_API_KEY` | real ND buyer lookup (Google Places) — optional |
-| `ZOHO_MAIL_USER` | your Zoho address, e.g. `cody@codycarlson.art` — optional |
-| `ZOHO_MAIL_PASSWORD` | a Zoho **app password** (not the login) — optional |
+| `ZOHO_MAIL_USER` | the real Zoho mailbox you log into, e.g. `cody@hipaasynth.com` — optional |
+| `ZOHO_MAIL_PASSWORD` | a Zoho **app password** for that mailbox (not the login) — optional |
+| `ZOHO_MAIL_FROM` | send *as* a verified alias, e.g. `cody1@codycarlson.art` — optional |
 
 Missing optional secrets degrade gracefully; the run still works.
 
