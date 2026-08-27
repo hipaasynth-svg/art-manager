@@ -88,9 +88,12 @@ async def main() -> None:
     await _step("Daily command board", agent.daily_command_board)
 
     # ---- Phone-first call sheet across a rotating set of pieces ----
-    n = int(os.environ.get("ART_MANAGER_DAILY_PIECES", "4") or "4")
+    n_sculpt = int(os.environ.get("ART_MANAGER_DAILY_SCULPTURES", "2") or "2")
+    n_paint = int(os.environ.get("ART_MANAGER_DAILY_PAINTINGS", "4") or "4")
     doy = datetime.date.today().timetuple().tm_yday
-    focus = logic.rotate_daily(agent.get_for_sale(), n, doy) or agent.pieces[:n]
+    focus = logic.daily_focus(
+        agent.get_for_sale(), sculptures=n_sculpt, paintings=n_paint, day=doy
+    ) or agent.pieces[: n_sculpt + n_paint]
     pairs: list[tuple[ArtPiece, list[BuyerLead]]] = []
     if not focus:
         print("\n[no pieces from the live site yet — skipping call sheet]")
@@ -125,6 +128,18 @@ async def main() -> None:
         except Exception as exc:  # noqa: BLE001 - content is a bonus, never fatal
             log.exception("content pack failed: %s", exc)
             print(f"[content pack skipped: {exc}]")
+
+    # ---- Self-improvement: record what to do differently, into the playbook ----
+    learnings = await _step("Reflect (self-improvement)", agent.reflect)
+    if learnings and str(learnings).strip():
+        try:
+            from agents import notes
+
+            if notes.append_playbook(str(learnings), today=today):
+                print("[playbook updated]")
+        except Exception as exc:  # noqa: BLE001 - never fatal
+            log.exception("playbook update failed: %s", exc)
+            print(f"[playbook update skipped: {exc}]")
 
     agent.save()
     print(f"\n[state saved to {agent.state_path}]")

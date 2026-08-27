@@ -31,6 +31,9 @@ class ArtPiece(BaseModel):
     title: str
     medium: str
     status: PieceStatus
+    # Which for-sale store the piece belongs to, so coverage can balance the
+    # daily mix (e.g. 2 sculptures + 4 paintings) instead of lumping them.
+    kind: Literal["painting", "sculpture"] = "painting"
     size: str = ""
     price: float | None = None
     notes: str = ""

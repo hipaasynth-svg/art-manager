@@ -125,6 +125,7 @@ def _piece_from_gallery_item(
     *,
     default_medium: str,
     site_url: str,
+    kind: str = "painting",
 ) -> ArtPiece | None:
     """Convert one gallery store entry into an ArtPiece, or None if malformed."""
     if not isinstance(item, dict):
@@ -158,6 +159,7 @@ def _piece_from_gallery_item(
         title=title,
         medium=medium,
         status=status,
+        kind="sculpture" if kind == "sculpture" else "painting",
         size=size,
         price=price,
         image_url=image_url,
@@ -192,17 +194,34 @@ def pieces_from_gallery(
     out: list[ArtPiece] = []
     # Both stores share one id space and the same object shape; only the default
     # medium differs when a piece doesn't state its own.
-    for store_key, default_medium in (("paintings", "Painting"), ("sculptures", "Sculpture")):
+    for store_key, default_medium, kind in (
+        ("paintings", "Painting", "painting"),
+        ("sculptures", "Sculpture", "sculpture"),
+    ):
         raw = gallery.get(store_key, [])
         if not isinstance(raw, list):
             continue
         for item in raw:
             piece = _piece_from_gallery_item(
-                item, default_medium=default_medium, site_url=site_url
+                item, default_medium=default_medium, site_url=site_url, kind=kind
             )
             if piece is not None:
                 out.append(piece)
     return out
+
+
+def daily_focus(
+    pieces: list[ArtPiece], *, sculptures: int, paintings: int, day: int
+) -> list[ArtPiece]:
+    """A balanced daily working set: N sculptures + M paintings, rotating.
+
+    Splits ``pieces`` by ``kind`` and rotates each pool independently by ``day``
+    (via ``rotate_daily``), so the mix stays balanced AND it isn't the same
+    pieces every day. Preserves input order; sculptures come first.
+    """
+    sculpt = [p for p in pieces if p.kind == "sculpture"]
+    paint = [p for p in pieces if p.kind == "painting"]
+    return rotate_daily(sculpt, sculptures, day) + rotate_daily(paint, paintings, day)
 
 
 def checkout_summary(
