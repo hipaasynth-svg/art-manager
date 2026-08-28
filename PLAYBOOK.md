@@ -8,3 +8,8 @@ or delete anything here — treat it as the studio's growing gut instinct.
 - Buyer search (Google Places) is reliable — every piece produced 5 named ND leads with phone/website. Lead with it and always attach the ?buy=<id> link; skip AI-guessed contacts.
 - Subject-exact matches are the highest-confidence leads: The Bison Ranch Lodge for the buffalo, Dakota Cat Cafe for the two-cat painting. Hunt the literal subject first, then the price-band retailers.
 - Site's real leak is discovery, not checkout — all 14 pieces are buyable now, but inventory/prices are JS-only and invisible to search/AI. Push the JSON-LD + crawlable-catalog PR before more outreach polish.
+
+## 2026-08-28
+- Subject-exact category searches beat generic ones: cat cafe → Dakota Cat Cafe, western wear → Bray's Saddlery, marina/lodge → Sakakawea targets all returned high-confidence contacts. Search the literal subject FIRST, then price-band retailers.
+- Pet-audience businesses (grooming, vet clinics, boarding resorts, cat cafe) doubled as both a wall-sale and a commissioned-pet-portrait funnel for the cat paintings — pitch the portrait angle every time on those leads.
+- Small/gift-price paintings ($140–205) matched cleanly to Minot Main St retail (children's boutiques, bookstore, frame shop, cafes) as consignment/feature; big pieces ($525–550) matched to lake lodges, saloons, and hunting outfitters. Segment outreach by price band.
