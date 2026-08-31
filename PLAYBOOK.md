@@ -18,3 +18,8 @@ or delete anything here — treat it as the studio's growing gut instinct.
 - Walleye carvings ($550) have a deep, uncontested ND target list: Devils Lake + Sakakawea lodges/resorts, lake-town bars/steakhouses, and bait & tackle all returned high-confidence contacts. Garrison ("Walleye Capital") and Devils Lake are the two richest towns — hit them first for any fish piece.
 - Same cat painting can be re-targeted by mood, not just "pet audience": the calm sleeping-cat matched spas/boutique hotels, the bold tuxedo cat matched breweries/pubs/barbers. Segment cat pieces by tone → venue, don't send every cat lead to vets/groomers.
 - Ask for the owner/manager by name on every call — chain locations (Petco, Pet Supplies Plus) only work via the local store manager, and independents (bars, boutiques, spas) convert on the owner. Bake "ask for the owner" into next_action every time.
+
+## 2026-08-31
+- Outdoor wood carvings (fox $140, squirrel $225) opened a fresh, uncontested channel the playbook was missing: Minot garden centers (Tc Nursery, Flower Box) and outdoor-living retailers (Integrity Outdoor Living) — lead with "outdoor-ready / holds a garden corner" for any wood animal that isn't a fish.
+- One curated Minot décor shop (The Foundry) and one cozy-living shop (Koselig at 106) recur as high-confidence fits across nearly every piece band ($140 fox to $259 two-cat) — treat them as anchor consignment accounts and pitch a rotating feature, not a one-off.
+- Gap to fix next run: 6 pieces now have named leads but the pipeline is still empty (0 logged, $0). Stop generating more lead lists and start logging leads + booking the actual calls — the bottleneck is follow-through, not target discovery.
